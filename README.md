@@ -1,6 +1,8 @@
 # MCV-M5 : Scene Understanding for Autonomous Vehicles
 This is the repository of our team (Team 8) FOR THE M5 project. Here you can find the source code, the documents, the deliverables and the instructions to run the code for each week (in Development), and some references that we use for the project.
 
+## Abstract
+
 ## Contributors
 
 We are Team 8:
@@ -26,7 +28,15 @@ There's no implemented code this week.
 
 ### Week 2
 
+#### Abstract
+
+#### Code explained
+
 #### Instructions to run the code
+
+#### Results
+
+#### Weights
 
 ### Week 3
 
