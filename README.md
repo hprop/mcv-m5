@@ -1,6 +1,6 @@
 # MCV-M5 : Scene Understanding for Autonomous Vehicles
 
-This is the Team 8 repository for the M5 project. Here you can find
+This is the PreDeeptor (Team 8) repository for the M5 project. Here you can find
 the source code, the documents, the deliverables and the instructions
 to run the code for each week, and some references that we use for the
 project.
@@ -9,7 +9,7 @@ project.
 
 ## Contributors
 
-We are Team 8:
+We are PreDeeptor:
 
 * Ignasi Mas (ignasi.masm@e-campus.uab.cat, Github user: [MrLeylo](https://github.com/MrLeylo))
 * Hugo Prol (hugo.prol@e-campus.uab.cat, Github user: [hprop](https://github.com/hprop))
