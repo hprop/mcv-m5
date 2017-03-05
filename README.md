@@ -1,5 +1,9 @@
 # MCV-M5 : Scene Understanding for Autonomous Vehicles
-This is the repository of our team (Team 8) FOR THE M5 project. Here you can find the source code, the documents, the deliverables and the instructions to run the code for each week (in Development), and some references that we use for the project.
+
+This is the Team 8 repository for the M5 project. Here you can find
+the source code, the documents, the deliverables and the instructions
+to run the code for each week, and some references that we use for the
+project.
 
 ## Abstract
 
@@ -21,6 +25,7 @@ We are Team 8:
 ### Week 1. Project presentation
 
 * [VGG network summary](https://docs.google.com/document/d/1zBcWIxjGT02iqhcDFw2RqQj7vJ2ab8TYPH6ApXw5pVU/edit?usp=sharing)
+* [ResNet network summary](https://docs.google.com/document/d/1pj0-WEytf4uMvt_VhsHnXWQ4TbrIP5nuCxbp6GX1w8E/edit?usp=sharing)
 
 #### Instructions to run the code
 
@@ -56,4 +61,5 @@ There's no implemented code this week.
 
 ## References
 
-* [VERY DEEP CONVOLUTIONAL NETWORKS FOR LARGE-SCALE IMAGE RECOGNITION (Karen Simonyan & Andrew Zisserman)] (https://arxiv.org/pdf/1409.1556.pdf)
+* Simonyan, K., Zisserman, A. [Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/pdf/1409.1556.pdf). CoRR 2014.
+* He, K., Zhang, X., Ren, S. & Sun, J. [Deep Residual Learning for Image Recognition](https://arxiv.org/pdf/1512.03385.pdf). CoRR 2015.
