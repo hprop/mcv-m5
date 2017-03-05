@@ -11,9 +11,9 @@ project.
 
 We are Team 8:
 
-* Ignasi Mas (ignasi.masm@e-campus.uab.cat)
-* Hugo Prol (hugo.prol@e-campus.uab.cat)
-* Jordi Puyoles (jordi.puyoles@e-campus.uab.cat)
+* Ignasi Mas (ignasi.masm@e-campus.uab.cat, Github user: [MrLeylo](https://github.com/MrLeylo))
+* Hugo Prol (hugo.prol@e-campus.uab.cat, Github user: [hprop](https://github.com/hprop))
+* Jordi Puyoles (jordi.puyoles@e-campus.uab.cat, Github user: [jordi-bird](https://github.com/jordi-bird))
 
 ## Documents
 
