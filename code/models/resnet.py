@@ -1,15 +1,14 @@
 from keras.models import Model
-from keras.applications import resnet50
 from keras.layers import Flatten, Dense
+from keras.applications import resnet50
 
+
+# Paper: https://arxiv.org/pdf/1512.03385.pdf
 
 def build_resnet50(img_shape=(3, 224, 224), n_classes=1000, l2_reg=0.,
                    load_pretrained=False, freeze_layers_from='base_model'):
     # Decide if load pretrained weights from imagenet
-    if load_pretrained:
-        weights = 'imagenet'
-    else:
-        weights = None
+    weights = 'imagenet' if load_pretrained else None
 
     # Get base model
     base_model = resnet50.ResNet50(include_top=False,
