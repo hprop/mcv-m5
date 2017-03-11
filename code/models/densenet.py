@@ -71,8 +71,8 @@ def classification_block(x, n_classes, weight_decay=1E-4):
 
 
 def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
-                   layers_in_dense_block=[6, 12, 24, 16], n_filters=20,
-                   growth_rate=1, weight_decay=0.):
+                   layers_in_dense_block=[6, 12, 24, 16], n_filters=16,
+                   growth_rate=32, weight_decay=0.):
 
     model_input = Input(shape=img_shape)
 
@@ -87,8 +87,7 @@ def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
     for i in range(n_dense_block - 1):
         x = denseblock(x, layers_in_dense_block[i], n_filters,
                        weight_decay=weight_decay)
-        fmaps_trans = math.floor(layers_in_dense_block[i] * n_filters *
-                                 growth_rate)
+        n_filters = n_filters + growth_rate
         x = transition(x, fmaps_trans, weight_decay=weight_decay)
 
     x = denseblock(x, layers_in_dense_block[n_dense_block-1], n_filters,

@@ -51,8 +51,8 @@ n_epochs                     = 30              # Number of epochs during trainin
 
 # Densenet filter parameters
 layers_in_dense_block        = [6, 12, 24, 16] # Number of layers on each dense block
-n_filters                    = 0               # Number of feature maps for each convolution in dense blocks
-growth_rate                  = 0.5             # Growth rate for dense algorithm
+n_filters                    = 16               # Number of feature maps for each convolution in dense blocks
+growth_rate                  = 32             # Growth rate for dense algorithm
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback
