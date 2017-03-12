@@ -18,7 +18,7 @@ test_model                   = False           # Test the model
 pred_model                   = False           # Predict using the model
 
 # Debug
-debug                        = False           # Use only few images for debuging
+debug                        = False            # Use only few images for debuging
 debug_images_train           = 50              # N images for training in debug mode (-1 means all)
 debug_images_valid           = 50              # N images for validation in debug mode (-1 means all)
 debug_images_test            = 50              # N images for testing in debug mode (-1 means all)
@@ -31,9 +31,9 @@ batch_size_test              = 30              # Batch size during testing
 crop_size_train              = None            # Crop size during training (Height, Width) or None
 crop_size_valid              = None            # Crop size during validation
 crop_size_test               = None            # Crop size during testing
-resize_train                 = (224, 224)      # Resize the image during training (Height, Width) or None
-resize_valid                 = (224, 224)      # Resize the image during validation
-resize_test                  = (224, 224)      # Resize the image during testing
+resize_train                 = None            # Resize the image during training (Height, Width) or None
+resize_valid                 = None            # Resize the image during validation
+resize_test                  = None            # Resize the image during testing
 
 # Data shuffle
 shuffle_train                = True            # Whether to shuffle the training data
@@ -50,9 +50,9 @@ weight_decay                 = 0.              # Weight decay or L2 parameter no
 n_epochs                     = 30              # Number of epochs during training
 
 # Densenet filter parameters
-layers_in_dense_block        = [6, 12, 24, 16] # Number of layers on each dense block
-n_filters                    = 16               # Number of feature maps for each convolution in dense blocks
-growth_rate                  = 32             # Growth rate for dense algorithm
+layers_in_dense_block        = [4, 6, 8]       # Number of layers on each dense block
+n_filters                    = 4               # Number of feature maps for each convolution in dense blocks
+growth_rate                  = 8               # Growth rate for dense algorithm
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback

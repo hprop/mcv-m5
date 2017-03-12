@@ -82,13 +82,13 @@ def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
                       init='he_uniform',
                       border_mode='same',
                       name='first_layer',
-                      bias=False)
+                      bias=False)(model_input)
 
     for i in range(n_dense_block - 1):
-        x = denseblock(x, layers_in_dense_block[i], n_filters,
+        x = denseblock(x, layers_in_dense_block[i], growth_rate,
                        weight_decay=weight_decay)
-        n_filters = n_filters + growth_rate
-        x = transition(x, fmaps_trans, weight_decay=weight_decay)
+        n_filters += (growth_rate*layers_in_dense_block[i])
+        x = transition(x, n_filters, weight_decay=weight_decay)
 
     x = denseblock(x, layers_in_dense_block[n_dense_block-1], n_filters,
                    weight_decay=weight_decay)

@@ -159,7 +159,7 @@ class Model_Factory():
                                load_pretrained=cf.load_imageNet,
                                freeze_layers_from=cf.freeze_layers_from)
         elif cf.model_name == 'densenet':
-            model = densenet(in_shape, cf.dataset.n_classes,
+            model = build_densenet(in_shape, cf.dataset.n_classes,
                              layers_in_dense_block=cf.layers_in_dense_block,
                              n_filters=cf.n_filters, growth_rate=cf.growth_rate,
                              weight_decay=cf.weight_decay)
