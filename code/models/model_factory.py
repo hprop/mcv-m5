@@ -163,6 +163,7 @@ class Model_Factory():
                              layers_in_dense_block=cf.layers_in_dense_block,
                              n_filters=cf.n_filters, growth_rate=cf.growth_rate,
                              n_bottleneck=cf.n_bottleneck,
+                             compression=cf.compression
                              weight_decay=cf.weight_decay)
         else:
             raise ValueError('Unknown model')

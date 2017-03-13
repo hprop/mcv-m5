@@ -54,6 +54,7 @@ layers_in_dense_block        = [4, 6, 8]       # Number of layers on each dense 
 n_filters                    = 4               # Number of feature maps for each convolution in dense blocks
 growth_rate                  = 8               # Growth rate for dense algorithm
 n_bottleneck                 = 32              # Number of feature maps on the bottleneck layers
+compression                  = 0.5             # Compression factor for the transition layers
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback

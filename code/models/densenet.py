@@ -83,11 +83,10 @@ def classification_block(x, n_classes, weight_decay=1E-4):
 
 def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
                    layers_in_dense_block=[6, 12, 24, 16], n_filters=16,
-                   growth_rate=32, n_bottleneck=None, weight_decay=0.):
+                   growth_rate=32, n_bottleneck=None, compression=1.,
+                   weight_decay=0.):
 
     model_input = Input(shape=img_shape)
-
-    n_dense_block = len(layers_in_dense_block)
 
     x = Convolution2D(n_filters, 7, 7,
                       init='he_uniform',
@@ -95,13 +94,13 @@ def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
                       name='first_layer',
                       bias=False)(model_input)
 
-    for i in range(n_dense_block - 1):
-        x = denseblock(x, layers_in_dense_block[i], growth_rate,
+    for block in layers_in_dense_block[:-1]:
+        x = denseblock(x, block, growth_rate,
                        weight_decay=weight_decay)
-        n_filters += (growth_rate*layers_in_dense_block[i])
+        n_filters += math.floor(compression*growth_rate*block)
         x = transition(x, n_filters, weight_decay=weight_decay)
 
-    x = denseblock(x, layers_in_dense_block[n_dense_block-1], n_filters,
+    x = denseblock(x, layers_in_dense_block[-1], n_filters,
                    n_bottleneck=n_bottleneck, weight_decay=weight_decay)
 
     x = classification_block(x, n_classes, weight_decay=weight_decay)
