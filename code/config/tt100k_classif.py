@@ -12,6 +12,14 @@ load_imageNet                = False           # Load Imagenet weights and norma
 load_pretrained              = False           # Load a pretrained model for doing finetuning
 weights_file                 = 'weights.hdf5'  # Training weight file name
 
+# Additional parameters for Densenet model
+layers_in_dense_block        = [4, 6, 8]       # Number of layers on each dense block
+initial_filters              = 4               # Number of feature maps for each convolution in dense blocks
+growth_rate                  = 8               # Growth rate for dense algorithm
+n_bottleneck                 = 32              # Number of feature maps on the bottleneck layers
+compression                  = 0.5             # Compression factor for the transition layers
+dropout                      = None            # None or float with the probability to drop an input (a Dropout layer is stacked after each Conv layer)
+
 # Parameters
 train_model                  = True            # Train the model
 test_model                   = False           # Test the model
@@ -48,13 +56,6 @@ optimizer                    = 'rmsprop'       # Optimizer
 learning_rate                = 0.0001          # Training learning rate
 weight_decay                 = 0.              # Weight decay or L2 parameter norm penalty
 n_epochs                     = 30              # Number of epochs during training
-
-# Densenet filter parameters
-layers_in_dense_block        = [4, 6, 8]       # Number of layers on each dense block
-initial_filters              = 4               # Number of feature maps for each convolution in dense blocks
-growth_rate                  = 8               # Growth rate for dense algorithm
-n_bottleneck                 = 32              # Number of feature maps on the bottleneck layers
-compression                  = 0.5             # Compression factor for the transition layers
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback

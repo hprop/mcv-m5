@@ -159,13 +159,15 @@ class Model_Factory():
                                load_pretrained=cf.load_imageNet,
                                freeze_layers_from=cf.freeze_layers_from)
         elif cf.model_name == 'densenet':
-            model = build_densenet(in_shape, cf.dataset.n_classes,
-                             layers_in_dense_block=cf.layers_in_dense_block,
-                             initial_filters=cf.initial_filters,
-                             growth_rate=cf.growth_rate,
-                             n_bottleneck=cf.n_bottleneck,
-                             compression=cf.compression
-                             weight_decay=cf.weight_decay)
+            model = build_densenet(in_shape,
+                                   cf.dataset.n_classes,
+                                   layers_in_dense_block=cf.layers_in_dense_block,
+                                   initial_filters=cf.initial_filters,
+                                   growth_rate=cf.growth_rate,
+                                   n_bottleneck=cf.n_bottleneck,
+                                   compression=cf.compression,
+                                   dropout=cf.dropout,
+                                   weight_decay=cf.weight_decay)
         else:
             raise ValueError('Unknown model')
 
