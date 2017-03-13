@@ -161,7 +161,8 @@ class Model_Factory():
         elif cf.model_name == 'densenet':
             model = build_densenet(in_shape, cf.dataset.n_classes,
                              layers_in_dense_block=cf.layers_in_dense_block,
-                             n_filters=cf.n_filters, growth_rate=cf.growth_rate,
+                             initial_filters=cf.initial_filters,
+                             growth_rate=cf.growth_rate,
                              n_bottleneck=cf.n_bottleneck,
                              compression=cf.compression
                              weight_decay=cf.weight_decay)
