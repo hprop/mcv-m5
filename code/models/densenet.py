@@ -28,7 +28,7 @@ def transition(x, n_filter, weight_decay=1E-4):
     return x
 
 
-def denseblock(x, n_layers, n_filter, weight_decay=1E-4):
+def denseblock(x, n_layers, n_filter, n_bottleneck=None, weight_decay=1E-4):
 
     list_feat = [x]
 
@@ -38,6 +38,17 @@ def denseblock(x, n_layers, n_filter, weight_decay=1E-4):
         concat_axis = -1
 
     for i in range(n_layers):
+        if n_bottleneck is not None:
+            x = BatchNormalization(mode=0,
+                                   axis=1,
+                                   gamma_regularizer=l2(weight_decay),
+                                   beta_regularizer=l2(weight_decay))(x)
+            x = Activation('relu')(x)
+            x = Convolution2D(n_bottleneck, 1, 1,
+                              init='he_uniform',
+                              border_mode='same',
+                              bias=False,
+                              W_regularizer=l2(weight_decay))(x)
         x = BatchNormalization(mode=0,
                                axis=1,
                                gamma_regularizer=l2(weight_decay),
@@ -72,7 +83,7 @@ def classification_block(x, n_classes, weight_decay=1E-4):
 
 def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
                    layers_in_dense_block=[6, 12, 24, 16], n_filters=16,
-                   growth_rate=32, weight_decay=0.):
+                   growth_rate=32, n_bottleneck=None, weight_decay=0.):
 
     model_input = Input(shape=img_shape)
 
@@ -91,7 +102,7 @@ def build_densenet(img_shape=(3, 224, 224), n_classes=1000,
         x = transition(x, n_filters, weight_decay=weight_decay)
 
     x = denseblock(x, layers_in_dense_block[n_dense_block-1], n_filters,
-                   weight_decay=weight_decay)
+                   n_bottleneck=n_bottleneck, weight_decay=weight_decay)
 
     x = classification_block(x, n_classes, weight_decay=weight_decay)
 
