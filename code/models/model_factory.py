@@ -10,6 +10,7 @@ from keras.utils.visualize_util import plot
 #from models.alexNet import build_alexNet
 from models.vgg import build_vgg
 from models.resnet import build_resnet50
+from models.densenet import build_densenet
 #from models.inceptionV3 import build_inceptionV3
 
 # Detection models
@@ -79,7 +80,7 @@ class Model_Factory():
     def make(self, cf, optimizer=None):
         if cf.model_name in ['lenet', 'alexNet', 'vgg16', 'vgg19', 'resnet50',
                              'InceptionV3', 'fcn8', 'unet', 'segnet',
-                             'segnet_basic', 'resnetFCN', 'yolo']:
+                             'segnet_basic', 'resnetFCN', 'yolo', 'densenet']:
             if optimizer is None:
                 raise ValueError('optimizer can not be None')
 
@@ -157,6 +158,14 @@ class Model_Factory():
                                cf.dataset.n_priors,
                                load_pretrained=cf.load_imageNet,
                                freeze_layers_from=cf.freeze_layers_from)
+        elif cf.model_name == 'densenet':
+            model = build_densenet(in_shape, cf.dataset.n_classes,
+                             layers_in_dense_block=cf.layers_in_dense_block,
+                             initial_filters=cf.initial_filters,
+                             growth_rate=cf.growth_rate,
+                             n_bottleneck=cf.n_bottleneck,
+                             compression=cf.compression
+                             weight_decay=cf.weight_decay)
         else:
             raise ValueError('Unknown model')
 
