@@ -7,6 +7,8 @@ project.
 
 ## Abstract
 
+Convolutional Neural Networks are a hot topic at this moment. On the other hand, autonomous driving is currently a worry for the society. The current project focuses on implementation and evaluation of deep Convolutional Neural Networks in Object Recognition, Object Detection and Semantic Segmentatation on traffic images.
+
 ## Contributors
 
 We are PreDeeptor:
@@ -35,7 +37,7 @@ There's no implemented code this week.
 
 #### Abstract
 
-
+This session focuses on the problem of object classification on the traffic images dataset.
 
 #### Code explained
 
