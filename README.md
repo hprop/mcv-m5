@@ -66,9 +66,9 @@ To make a test of a model called *modelX* and save the results in */home/master/
 
 The complete description of the experiments and results can be found on the [report](https://www.overleaf.com/read/hdtfstjrsqnr) or on the [presentation](https://docs.google.com/presentation/d/1wJkGmbYqp0s87yg-msrxecCzeZg3Miuwm85n5_zYxIo/edit?usp=sharing), but here we present the obtained accuracy for all of them.
 
-##### VGG tested in TT10K dataset 
+##### VGG tested in TT10K dataset
 
-| Model | Train results | Validation results | Test results | 
+| Model | Train results | Validation results | Test results |
 | :---: | :---: | :---: | :---: |
 | VGG16-A | 88.43% | 79.36% | 80.33% |
 | VGG16-B | 75.33% | 78.04% | 77.55% |
@@ -77,21 +77,21 @@ The complete description of the experiments and results can be found on the [rep
 | VGG16-A+ | 95.87% | 92.61% | 92.93% |
 | VGG16-A++ | 99.56% | 95.54% | 96.69% |
 
-##### VGG tested in BelgiumTSC dataset 
+##### VGG tested in BelgiumTSC dataset
 
-| Model | Train results | Validation results | Test results | 
+| Model | Train results | Validation results | Test results |
 | :---: | :---: | :---: | :---: |
 | VGG16-E | 81.25% | 76.55% | 75.67% |
 
-##### VGG tested in KITTI dataset 
+##### VGG tested in KITTI dataset
 
-| Model | Train results | Validation results | Test results | 
+| Model | Train results | Validation results | Test results |
 | :---: | :---: | :---: | :---: |
 | VGG16-F | 94.55% | 93.67% | 93.67% |
 
-##### Additional architectures tested in  dataset 
+##### Additional architectures tested in  dataset
 
-| Model | Train results | Validation results | Test results | 
+| Model | Train results | Validation results | Test results |
 | :---: | :---: | :---: | :---: |
 | ResNet-A | 99.89% | 95.72% | 92.92% |
 | ResNet-B | 75.84% | 75.15% | (\*) |
