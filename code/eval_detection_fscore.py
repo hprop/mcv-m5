@@ -11,12 +11,16 @@ from models.yolo import build_yolo
 from tools.yolo_utils import *
 
 # Input parameters to select the Dataset and the model used
-dataset_name = 'Udacity' #set to TT100K_detection otherwise
-model_name = 'tiny-yolo' #set to yolo otherwise
+dataset_name = 'TT100K_detection' #set to TT100K_detection otherwise
+model_name = 'yolo' #set to yolo otherwise
+# Input parameters to perform data preprocessing
+samplewise_center = True
+samplewise_std_normalization = True
+img_channel_axis = 0
 
 # Net output post-processing needs two parameters:
-detection_threshold = 0.6 # Min probablity for a prediction to be considered
-nms_threshold       = 0.2 # Non Maximum Suppression threshold
+detection_threshold = 0.1 # Min probablity for a prediction to be considered
+nms_threshold       = 0.9 # Non Maximum Suppression threshold
 # IMPORTANT: the values of these two params will affect the final performance of the netwrok
 #            you are allowed to find their optimal values in the validation/train sets
 
@@ -71,7 +75,12 @@ for i,img_path in enumerate(imfiles):
   
   img = image.load_img(img_path, target_size=(input_shape[1], input_shape[2]))
   img = image.img_to_array(img)
-  img = img / 255.
+  img = img / 255
+  if samplewise_center:
+     img -= np.mean(img, axis=img_channel_axis, keepdims=True)
+  if samplewise_std_normalization:
+     img /= (np.std(img, axis=img_channel_axis, keepdims=True) + 1e-7)
+  
   inputs.append(img.copy())
   img_paths.append(img_path)
 
