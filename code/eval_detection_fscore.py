@@ -11,7 +11,7 @@ from models.yolo import build_yolo
 from tools.yolo_utils import *
 
 # Input parameters to select the Dataset and the model used
-dataset_name = 'TT100K_detection' #set to TT100K_detection otherwise
+dataset_name = 'TT100K_detection' #set to Udacity dataset otherwise
 model_name = 'yolo' #set to yolo otherwise
 # Input parameters to perform data preprocessing
 samplewise_center = True
@@ -20,7 +20,7 @@ img_channel_axis = 0
 
 # Net output post-processing needs two parameters:
 detection_threshold = 0.1 # Min probablity for a prediction to be considered
-nms_threshold       = 0.9 # Non Maximum Suppression threshold
+nms_threshold       = 0.1 # Non Maximum Suppression threshold
 # IMPORTANT: the values of these two params will affect the final performance of the netwrok
 #            you are allowed to find their optimal values in the validation/train sets
 
@@ -53,7 +53,6 @@ model = build_yolo(img_shape=input_shape,n_classes=NUM_CLASSES, n_priors=5,
 
 model.load_weights(sys.argv[1])
 
-
 test_dir = sys.argv[2]
 imfiles = [os.path.join(test_dir,f) for f in os.listdir(test_dir) 
                                     if os.path.isfile(os.path.join(test_dir,f)) 
@@ -72,10 +71,9 @@ total_true = 0.
 total_pred = 0.
 
 for i,img_path in enumerate(imfiles):
-  
   img = image.load_img(img_path, target_size=(input_shape[1], input_shape[2]))
   img = image.img_to_array(img)
-  img = img / 255
+  img = img / 255.
   if samplewise_center:
      img -= np.mean(img, axis=img_channel_axis, keepdims=True)
   if samplewise_std_normalization:
