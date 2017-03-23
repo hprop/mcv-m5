@@ -1,5 +1,7 @@
-from keras.layers import (Input, Flatten, Convolution2D, MaxPooling2D,
-                          AtrousConvolution2D, GlobalAveragePooling2D)
+from keras.models import Model
+from keras.layers import (Input, Flatten, Reshape, merge, Activation,
+                          Convolution2D, MaxPooling2D, AtrousConvolution2D,
+                          GlobalAveragePooling2D)
 
 from layers.ssd_layers import Normalize, PriorBox
 
@@ -156,7 +158,7 @@ def vgg16_base_network(input_shape=None):
     ## Global Average Pooling is not used in the original paper.
     ## Added here to obtain a final feature maps resolution of 1x1 when
     ## image size is > 300x300.
-    net['pool11'] = GlobalAveragePooling2D(name='pool11')(net['conv11_2'])
+    # net['pool11'] = GlobalAveragePooling2D(name='pool11')(net['conv11_2'])
 
     # Add extra layer on top of conv4_3 to normalize its output according to
     # the paper
@@ -165,9 +167,9 @@ def vgg16_base_network(input_shape=None):
     return net
 
 
-def create_prior(layer_name, n_priors, min_size, max_size, aspect_ratios,
+def create_prior(layer_name, n_boxes, min_size, max_size, aspect_ratios,
                  variances):
-    return dict(layer_name=layer_name, n_priors=n_priors, min_size=min_size,
+    return dict(layer_name=layer_name, n_boxes=n_boxes, min_size=min_size,
                 max_size=max_size, aspect_ratios=aspect_ratios,
                 variances=variances)
 
@@ -189,8 +191,6 @@ def build_ssd300(input_shape, n_classes):
     return ssd300
 
 
-
-
 def build_ssd(input_shape, n_classes, base_network, priors):
     """
     input_shape: (h, w)
@@ -203,40 +203,74 @@ def build_ssd(input_shape, n_classes, base_network, priors):
 
     net = dict(base_network)
 
+    # Build the prediction layers on top of the base network
+    for p in priors:
+        base_layer = p['layer_name']
+        num_priors = p['n_boxes']
+        prior_min_size = p['min_size']
+        prior_max_size = p['max_size']
+        prior_aspect_ratios = p['aspect_ratios']
+        prior_variances = p['variances']
 
-    ## For each layer taking as a prediction input:
+        # Bounding box locations
+        loc_layer = base_layer + '_loc'
+        loc_layer_flat = base_layer + '_loc_flat'
 
-    base_layer = 'conv4_3_norm'
-    num_priors = 3
-    prior_min_size = 30.
-    prior_max_size = None
-    prior_aspect_ratios = [2]
-    prior_variances = [0.1, 0.1, 0.2, 0.2]
+        net[loc_layer] = Convolution2D(num_priors * 4, 3, 3,
+                                       border_mode='same',
+                                       name=loc_layer)(net[base_layer])
+        net[loc_layer_flat] = Flatten(name=loc_layer_flat)(net[loc_layer])
 
-    # Bounding box locations
-    loc_layer = base_layer + '_loc'
-    loc_layer_flat = base_layer + '_loc_flat'
+        # Class confidences for each bounding box
+        conf_layer = base_layer + '_conf'
+        conf_layer_flat = base_layer + '_conf_flat'
 
-    net[loc_layer] = Convolution2D(num_priors * 4, 3, 3,
-                                   border_mode='same',
-                                   name=loc_layer)(net[base_layer])
-    net[loc_layer_flat] = Flatten(name=loc_layer_flat)(net[loc_layer])
+        net[conf_layer] = Convolution2D(num_priors * n_classes, 3, 3,
+                                        border_mode='same',
+                                        name=conf_layer)(net[base_layer])
+        net[conf_layer_flat] = Flatten(name=conf_layer_flat)(net[conf_layer])
 
-    # Class confidences for each bounding box
-    conf_layer = base_layer + '_conf'
-    conf_layer_flat = base_layer + '_conf_flat'
+        # Bounding box priors (one for each layer)
+        priors_layer = base_layer + '_priors'
 
-    net[conf_layer] = Convolution2D(num_priors * n_classes, 3, 3,
-                                    border_mode='same',
-                                    name=conf_layer)(net[base_layer])
-    net[conf_layer_flat] = Flatten(name=conf_layer_flat)(net[conf_layer])
+        net[priors_layer] = PriorBox([input_shape[1], input_shape[0]],
+                                     prior_min_size,
+                                     max_size=prior_max_size,
+                                     aspect_ratios=prior_aspect_ratios,
+                                     variances=prior_variances,
+                                     name=priors_layer)(net[base_layer])
 
-    # Bounding box priors (one for each layer)
-    priors_layer = base_layer + '_priors'
+    # Build the top layer
+    feature_layers = [p['layer_name'] for p in priors]
+    loc_layers = [net[name + '_loc_flat'] for name in feature_layers]
+    conf_layers = [net[name + '_conf_flat'] for name in feature_layers]
+    priors_layers = [net[name + '_priors'] for name in feature_layers]
 
-    net[priors_layer] = PriorBox([input_shape[1], input_shape[0]],
-                                 prior_min_size,
-                                 max_size=prior_max_size,
-                                 aspect_ratios=prior_aspect_ratios,
-                                 variances=prior_variances,
-                                 name=priors_layer)(net[base_layer])
+    # TODO: this is theano-compatible?
+    net['pred_loc'] = merge(loc_layers, mode='concat', concat_axis=1,
+                            name='pred_loc')
+
+    n_boxes = net['pred_loc']._keras_shape[-1] // 4
+    net['pred_loc'] = Reshape((n_boxes, 4),
+                              name='pred_loc_resh')(net['pred_loc'])
+
+    net['pred_conf'] = merge(conf_layers, mode='concat', concat_axis=1,
+                             name='pred_conf')
+    net['pred_conf'] = Reshape((n_boxes, n_classes),
+                               name='pred_conf_resh')(net['pred_conf'])
+    net['pred_conf'] = Activation('softmax',
+                                  name='pred_conf_final')(net['pred_conf'])
+
+    net['pred_prior'] = merge(priors_layers, mode='concat', concat_axis=1,
+                              name='pred_prior')
+
+    net['pred_all'] = merge([net['pred_loc'],
+                             net['pred_conf'],
+                             net['pred_prior']],
+                            mode='concat',
+                            concat_axis=2,
+                            name='pred_all')
+
+    model = Model(net['input'], net['pred_all'])
+
+    return model
