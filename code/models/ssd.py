@@ -167,7 +167,7 @@ def vgg16_base_network(input_shape=None):
     return net
 
 
-def create_prior(layer_name, n_boxes, min_size, max_size, aspect_ratios,
+def create_priors(layer_name, n_boxes, min_size, max_size, aspect_ratios,
                  variances):
     return dict(layer_name=layer_name, n_boxes=n_boxes, min_size=min_size,
                 max_size=max_size, aspect_ratios=aspect_ratios,
@@ -179,12 +179,12 @@ def build_ssd300(input_shape, n_classes):
     vgg16 = vgg16_base_network(input_shape)
 
     variances = [.1, .1, .2, .2]
-    priors = [create_prior('conv4_3_norm', 3, 30., None, [2], variances),
-              create_prior('conv7', 6, 60., 114., [2, 3], variances),
-              create_prior('conv8_2', 6, 114., 168., [2, 3], variances),
-              create_prior('conv9_2', 6, 168., 222., [2, 3], variances),
-              create_prior('conv10_2', 6, 168., 222., [2, 3], variances),
-              create_prior('conv11_2', 6, 276., 330., [2, 3], variances)]
+    priors = [create_priors('conv4_3_norm', 3, 30., None, [2], variances),
+              create_priors('conv7', 6, 60., 114., [2, 3], variances),
+              create_priors('conv8_2', 6, 114., 168., [2, 3], variances),
+              create_priors('conv9_2', 6, 168., 222., [2, 3], variances),
+              create_priors('conv10_2', 6, 168., 222., [2, 3], variances),
+              create_priors('conv11_2', 6, 276., 330., [2, 3], variances)]
 
     ssd300 = build_ssd(input_shape, n_classes, vgg16, priors)
 
