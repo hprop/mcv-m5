@@ -15,10 +15,10 @@ weights_file                 = 'weights.hdf5'  # Training weight file name
 # Parameters
 train_model                  = True            # Train the model
 test_model                   = True            # Test the model
-pred_model                   = True            # Predict using the model
+pred_model                   = False           # Predict using the model
 
 # Debug
-debug                        = True           # Use only few images for debuging
+debug                        = False           # Use only few images for debuging
 debug_images_train           = 1000              # N images for training in debug mode (-1 means all)
 debug_images_valid           = 1000             # N images for validation in debug mode (-1 means all)
 debug_images_test            = 1000              # N images for testing in debug mode (-1 means all)
@@ -31,9 +31,9 @@ batch_size_test              = 32             # Batch size during testing
 crop_size_train              = None            # Crop size during training (Height, Width) or None
 crop_size_valid              = None            # Crop size during validation
 crop_size_test               = None            # Crop size during testing
-resize_train                 = (300, 300)      # Resize the image during training (Height, Width) or None
-resize_valid                 = (300, 300)      # Resize the image during validation
-resize_test                  = (300, 300)      # Resize the image during testing
+resize_train                 = (320, 320)      # Resize the image during training (Height, Width) or None
+resize_valid                 = (320, 320)      # Resize the image during validation
+resize_test                  = (320, 320)      # Resize the image during testing
 
 # Data shuffle
 shuffle_train                = True            # Whether to shuffle the training data
@@ -45,9 +45,9 @@ seed_test                    = 1924            # Random seed for the testing shu
 
 # Training parameters
 optimizer                    = 'adam'       # Optimizer
-learning_rate                = 0.00001         # Training learning rate
+learning_rate                = 0.001         # Training learning rate
 weight_decay                 = 0.              # Weight decay or L2 parameter norm penalty
-n_epochs                     = 10              # Number of epochs during training
+n_epochs                     = 20              # Number of epochs during training
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback
@@ -71,7 +71,7 @@ checkpoint_save_weights_only = True            # Save only weights or also model
 checkpoint_verbose           = 1               # Verbosity of the checkpoint
 
 # Callback plot
-plotHist_enabled             = False            # Enable the Callback
+plotHist_enabled             = True            # Enable the Callback
 plotHist_verbose             = 0               # Verbosity of the callback
 
 # Callback LR decay scheduler
