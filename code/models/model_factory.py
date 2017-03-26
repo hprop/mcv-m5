@@ -15,6 +15,7 @@ from models.densenet import build_densenet
 
 # Detection models
 from models.yolo import build_yolo
+from models.ssd import build_ssd300
 
 # Segmentation models
 from models.fcn8 import build_fcn8
@@ -27,6 +28,8 @@ from models.fcn8 import build_fcn8
 #from models.adversarial_semseg import Adversarial_Semseg
 
 from models.model import One_Net_Model
+from metrics.ssd_metric import MultiboxLoss
+from tools import ssd_utils
 
 
 # Build the model
@@ -49,12 +52,28 @@ class Model_Factory():
             loss = 'categorical_crossentropy'
             metrics = ['accuracy']
         elif cf.dataset.class_mode == 'detection':
-            in_shape = (cf.dataset.n_channels,
-                        cf.target_size_train[0],
-                        cf.target_size_train[1])
-            # TODO detection : check model, different detection nets may have different losses and metrics
-            loss = YOLOLoss(in_shape, cf.dataset.n_classes, cf.dataset.priors)
-            metrics = [YOLOMetrics(in_shape, cf.dataset.n_classes, cf.dataset.priors)]
+
+            if cf.model_name in ['yolo', 'tiny-yolo']:
+                in_shape = (cf.dataset.n_channels,
+                            cf.target_size_train[0],
+                            cf.target_size_train[1])
+                loss = YOLOLoss(in_shape, cf.dataset.n_classes, cf.dataset.priors)
+                metrics = [YOLOMetrics(in_shape, cf.dataset.n_classes, cf.dataset.priors)]
+            elif cf.model_name == 'ssd300':
+                # TODO: in_shape ok for ssd?
+                in_shape = (cf.target_size_train[0],
+                            cf.target_size_train[1],
+                            cf.dataset.n_channels)
+
+                # TODO: extract config parameters from MultiboxLoss
+                mboxloss = MultiboxLoss(cf.dataset.n_classes,
+                                        alpha=1.0,
+                                        neg_pos_ratio=3.0,
+                                        background_label_id=0,
+                                        negatives_for_hard=100.0)
+                loss = lambda y_true, y_pred: mboxloss.compute_loss(y_true, y_pred)
+                metrics = []  # TODO: add mAP metric
+
         elif cf.dataset.class_mode == 'segmentation':
             if K.image_dim_ordering() == 'th':
                 if variable_input_size:
@@ -80,7 +99,8 @@ class Model_Factory():
     def make(self, cf, optimizer=None):
         if cf.model_name in ['lenet', 'alexNet', 'vgg16', 'vgg19', 'resnet50',
                              'InceptionV3', 'densenet', 'fcn8', 'unet', 'segnet',
-                             'segnet_basic', 'resnetFCN', 'yolo', 'tiny-yolo']:
+                             'segnet_basic', 'resnetFCN', 'yolo', 'tiny-yolo',
+                             'ssd300']:
             if optimizer is None:
                 raise ValueError('optimizer can not be None')
 
@@ -174,6 +194,13 @@ class Model_Factory():
                                cf.dataset.n_priors,
                                load_pretrained=cf.load_imageNet,
                                freeze_layers_from=cf.freeze_layers_from, tiny=True)
+        elif cf.model_name == 'ssd300':
+            model = build_ssd300(in_shape, cf.dataset.n_classes)
+            # TODO: find best parameters
+            ssd_utils.initialize_module(model, in_shape,
+                                        cf.dataset.n_classes,
+                                        overlap_threshold=0.5,
+                                        nms_thresh=0.45, top_k=400)
         else:
             raise ValueError('Unknown model')
 

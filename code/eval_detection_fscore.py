@@ -10,9 +10,17 @@ from keras.preprocessing import image
 from models.yolo import build_yolo
 from tools.yolo_utils import *
 
+# Input parameters to select the Dataset and the model used
+dataset_name = 'TT100K_detection' #set to Udacity dataset otherwise
+model_name = 'yolo' #set to yolo otherwise
+# Input parameters to perform data preprocessing
+samplewise_center = True
+samplewise_std_normalization = True
+img_channel_axis = 0
+
 # Net output post-processing needs two parameters:
-detection_threshold = 0.6 # Min probablity for a prediction to be considered
-nms_threshold       = 0.2 # Non Maximum Suppression threshold
+detection_threshold = 0.1 # Min probablity for a prediction to be considered
+nms_threshold       = 0.1 # Non Maximum Suppression threshold
 # IMPORTANT: the values of these two params will affect the final performance of the netwrok
 #            you are allowed to find their optimal values in the validation/train sets
 
@@ -20,16 +28,30 @@ if len(sys.argv) < 3:
   print "USAGE: python eval_detection_fscore.py weights_file path_to_images"
   quit()
 
-classes     = ['i2','i4','i5','il100','il60','il80','io','ip','p10','p11','p12','p19','p23','p26','p27','p3','p5','p6','pg','ph4','ph4.5','ph5','pl100','pl120','pl20','pl30','pl40','pl5','pl50','pl60','pl70','pl80','pm20','pm30','pm55','pn','pne','po','pr40','w13','w32','w55','w57','w59','wo']
-priors      = [[0.9,1.2], [1.05,1.35], [2.15,2.55], [3.25,3.75], [5.35,5.1]]
+if dataset_name == 'TT100K_detection':
+    classes = ['i2','i4','i5','il100','il60','il80','io','ip','p10','p11','p12','p19','p23','p26','p27','p3','p5','p6','pg','ph4','ph4.5','ph5','pl100','pl120','pl20','pl30','pl40','pl5','pl50','pl60','pl70','pl80','pm20','pm30','pm55','pn','pne','po','pr40','w13','w32','w55','w57','w59','wo']
+elif dataset_name == 'Udacity':
+    classes = ['Car','Pedestrian','Truck']
+else:
+    print "Error: Dataset not found!"
+    quit()
+
+priors = [[0.9,1.2], [1.05,1.35], [2.15,2.55], [3.25,3.75], [5.35,5.1]]
 input_shape = (3, 320, 320)
 
 NUM_PRIORS  = len(priors)
 NUM_CLASSES = len(classes)
 
-model = build_yolo(img_shape=input_shape,n_classes=NUM_CLASSES)
-model.load_weights(sys.argv[1])
+if model_name == 'tiny-yolo':
+    tiny_yolo = True
+else:
+    tiny_yolo = False
 
+model = build_yolo(img_shape=input_shape,n_classes=NUM_CLASSES, n_priors=5,
+               load_pretrained=False,freeze_layers_from='base_model',
+               tiny=tiny_yolo)
+
+model.load_weights(sys.argv[1])
 
 test_dir = sys.argv[2]
 imfiles = [os.path.join(test_dir,f) for f in os.listdir(test_dir) 
@@ -49,10 +71,14 @@ total_true = 0.
 total_pred = 0.
 
 for i,img_path in enumerate(imfiles):
-  
   img = image.load_img(img_path, target_size=(input_shape[1], input_shape[2]))
   img = image.img_to_array(img)
   img = img / 255.
+  if samplewise_center:
+     img -= np.mean(img, axis=img_channel_axis, keepdims=True)
+  if samplewise_std_normalization:
+     img /= (np.std(img, axis=img_channel_axis, keepdims=True) + 1e-7)
+  
   inputs.append(img.copy())
   img_paths.append(img_path)
 
