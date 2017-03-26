@@ -180,11 +180,11 @@ def build_ssd300(input_shape, n_classes):
 
     variances = [.1, .1, .2, .2]
     priors = [create_priors('conv4_3_norm', 3, 10., None, [2], variances),
-              create_priors('conv7', 6, 60., 114., [2, 3], variances),
-              create_priors('conv8_2', 6, 114., 168., [2, 3], variances),
-              create_priors('conv9_2', 6, 168., 222., [2, 3], variances),
-              create_priors('conv10_2', 6, 222., 276., [2, 3], variances),
-              create_priors('conv11_2', 6, 276., 330., [2, 3], variances)]
+              create_priors('conv7', 5, 60., 114., [2, 3], variances),
+              create_priors('conv8_2', 5, 114., 168., [2, 3], variances),
+              create_priors('conv9_2', 5, 168., 222., [2, 3], variances),
+              create_priors('conv10_2', 5, 222., 276., [2, 3], variances),
+              create_priors('conv11_2', 5, 276., 330., [2, 3], variances)]
 
     ssd300 = build_ssd(input_shape, n_classes, vgg16, priors)
 
@@ -192,12 +192,12 @@ def build_ssd300(input_shape, n_classes):
 
 
 def build_ssd(input_shape, n_classes, base_network, priors):
-    """
-    input_shape: (h, w, c)
+    """input_shape: (h, w, c)
 
 
-    priors: dict with keys being the names of layers used as feature extractors,
-    and values being the priors (bboxes info) corresponding to each layer.
+    priors: dict with keys being the names of layers used as feature
+    extractors, and values being the priors (bboxes info) corresponding to each
+    layer.
 
     """
 
