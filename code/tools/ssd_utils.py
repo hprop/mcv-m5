@@ -18,6 +18,11 @@ SSD_LOADED = False
 
 def initialize_module(model, input_shape, n_classes, overlap_threshold=0.5,
                       nms_thresh=0.45, top_k=400):
+    """Initialize module to use the internal BBoxUtility class
+
+    See that class for the documentation of the parameters.
+
+    """
     global _bbox_util, SSD_LOADED
     priors = extract_priors(model, input_shape)
     _bbox_util = BBoxUtility(n_classes, priors, overlap_threshold, nms_thresh,
@@ -60,7 +65,6 @@ def make_batch(ground_truth, n_class):
         half_w = w / 2
         half_h = h / 2
 
-        # Add an extra class for background in the result array
         result = np.zeros([gt.shape[0], 4 + n_class])
         result[:, 0] = cx - half_w
         result[:, 1] = cy - half_h
@@ -73,12 +77,27 @@ def make_batch(ground_truth, n_class):
         return result
 
     batch = [rearange(im_gt) for im_gt in ground_truth]
-
-    # TODO: confirm input is OK for BBoxUtility
     y_true = [_bbox_util.assign_boxes(im_gt) for im_gt in batch]
     y_true = np.array(y_true)
 
     return y_true
+
+
+def ssd_postprocess_prediction(y_pred, n_classes, detection_thr):
+    y_pred = y_pred[np.newaxis, :]
+    bboxes = _bbox_util.detection_out(y_pred,
+                                      background_label_id=-1,
+                                      keep_top_k=200,
+                                      confidence_threshold=detection_thr)[0]
+
+    # bboxes -> np array (n_pos_det, 6)
+    # donde cols: label, confidence, left, top, right, bott
+
+    # TODO: convert structure to yolo's BoundBox class
+
+    return bboxes
+
+
 
 
 class BBoxUtility(object):
@@ -215,7 +234,7 @@ class BBoxUtility(object):
                                                          np.arange(assign_num),
                                                          :4]
         assignment[:, 4][best_iou_mask] = 0
-        assignment[:, 4:-8][best_iou_mask] = boxes[best_iou_idx, 4:]
+        assignment[:, 5:-8][best_iou_mask] = boxes[best_iou_idx, 4:]
         assignment[:, -8][best_iou_mask] = 1
         return assignment
 

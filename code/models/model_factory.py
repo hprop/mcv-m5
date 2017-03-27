@@ -66,12 +66,12 @@ class Model_Factory():
                             cf.dataset.n_channels)
 
                 # TODO: extract config parameters from MultiboxLoss
-                mboxloss = MultiboxLoss(cf.dataset.n_classes,
+                mboxloss = MultiboxLoss(cf.dataset.n_classes + 1,
                                         alpha=1.0,
                                         neg_pos_ratio=3.0,
                                         background_label_id=0,
                                         negatives_for_hard=100.0)
-                loss = lambda y_true, y_pred: mboxloss.compute_loss(y_true, y_pred)
+                loss = mboxloss.compute_loss
                 metrics = []  # TODO: add mAP metric
 
         elif cf.dataset.class_mode == 'segmentation':
@@ -195,10 +195,10 @@ class Model_Factory():
                                load_pretrained=cf.load_imageNet,
                                freeze_layers_from=cf.freeze_layers_from, tiny=True)
         elif cf.model_name == 'ssd300':
-            model = build_ssd300(in_shape, cf.dataset.n_classes)
+            model = build_ssd300(in_shape, cf.dataset.n_classes + 1)
             # TODO: find best parameters
             ssd_utils.initialize_module(model, in_shape,
-                                        cf.dataset.n_classes,
+                                        cf.dataset.n_classes + 1,
                                         overlap_threshold=0.5,
                                         nms_thresh=0.45, top_k=400)
         else:

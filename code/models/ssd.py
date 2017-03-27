@@ -167,24 +167,56 @@ def vgg16_base_network(input_shape=None):
     return net
 
 
-def create_priors(layer_name, n_boxes, min_size, max_size, aspect_ratios,
+def create_priors(layer_name, min_size, max_size, aspect_ratios,
                  variances):
+    """Create the priors to be applied in a layer
+
+    Parameters
+    ----------
+    layer_name: str
+        Name of the layer in the base network where the priors are applied.
+
+    min_size: float
+        Minimum size in pixels the priors can have.
+
+    max_size: float
+        Maximum size in pixels the priors can have.
+
+    aspect_ratios: list of float
+        Aspect ratios of the priors to be used.
+
+    variances:
+        TODO: review
+
+    The priors are passed to the build_ssd() function, and the final number of
+    priors will be: 2 * len(aspect_ratios) + 1. Two priors per each aspect
+    ratio specified in `aspect_ratios' (one for the actual value, other for its
+    inverse 1/aspect), plus a prior with aspect ratio 1, which is internally
+    added in the build_ssd() function.
+
+    """
+    n_boxes = len(aspect_ratios) * 2 + 1
     return dict(layer_name=layer_name, n_boxes=n_boxes, min_size=min_size,
                 max_size=max_size, aspect_ratios=aspect_ratios,
                 variances=variances)
 
 
 def build_ssd300(input_shape, n_classes):
+    """Create a SSD300 model
 
+    `input_shape' is in the form (w, h, c), and `n_classes' includes the
+    background class (so "n_classes = positive_classes + 1").
+
+    """
     vgg16 = vgg16_base_network(input_shape)
 
     variances = [.1, .1, .2, .2]
-    priors = [create_priors('conv4_3_norm', 3, 10., None, [2], variances),
-              create_priors('conv7', 5, 60., 114., [2, 3], variances),
-              create_priors('conv8_2', 5, 114., 168., [2, 3], variances),
-              create_priors('conv9_2', 5, 168., 222., [2, 3], variances),
-              create_priors('conv10_2', 5, 222., 276., [2, 3], variances),
-              create_priors('conv11_2', 5, 276., 330., [2, 3], variances)]
+    priors = [create_priors('conv4_3_norm', 10., None, [2], variances),
+              create_priors('conv7', 60., 114., [2, 3], variances),
+              create_priors('conv8_2', 114., 168., [2, 3], variances),
+              create_priors('conv9_2', 168., 222., [2, 3], variances),
+              create_priors('conv10_2', 222., 276., [2, 3], variances),
+              create_priors('conv11_2', 276., 330., [2, 3], variances)]
 
     ssd300 = build_ssd(input_shape, n_classes, vgg16, priors)
 
@@ -195,7 +227,8 @@ def build_ssd(input_shape, n_classes, base_network, priors):
     """input_shape: (h, w, c)
 
 
-    priors: dict with keys being the names of layers used as feature
+    priors: list of priors created through create_priors() function.
+
     extractors, and values being the priors (bboxes info) corresponding to each
     layer.
 
