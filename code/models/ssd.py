@@ -211,12 +211,12 @@ def build_ssd300(input_shape, n_classes):
     vgg16 = vgg16_base_network(input_shape)
 
     variances = [.1, .1, .2, .2]
-    priors = [create_priors('conv4_3_norm', 10., None, [2], variances),
-              create_priors('conv7', 60., 114., [2, 3], variances),
-              create_priors('conv8_2', 114., 168., [2, 3], variances),
-              create_priors('conv9_2', 168., 222., [2, 3], variances),
-              create_priors('conv10_2', 222., 276., [2, 3], variances),
-              create_priors('conv11_2', 276., 330., [2, 3], variances)]
+    priors = [create_priors('conv4_3_norm', 10., None, [1.25, 1.5], variances),
+              create_priors('conv7', 60., 114., [1.5], variances),
+              create_priors('conv8_2', 114., 168., [1.5], variances),
+              create_priors('conv9_2', 168., 222., [1.5], variances),
+              create_priors('conv10_2', 222., 276., [1.5], variances),
+              create_priors('conv11_2', 276., 330., [1.5], variances)]
 
     ssd300 = build_ssd(input_shape, n_classes, vgg16, priors)
 

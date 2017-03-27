@@ -68,7 +68,7 @@ class Model_Factory():
                 # TODO: extract config parameters from MultiboxLoss
                 mboxloss = MultiboxLoss(cf.dataset.n_classes + 1,
                                         alpha=1.0,
-                                        neg_pos_ratio=3.0,
+                                        neg_pos_ratio=2.0,
                                         background_label_id=0,
                                         negatives_for_hard=100.0)
                 loss = mboxloss.compute_loss

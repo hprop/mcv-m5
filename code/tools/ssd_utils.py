@@ -62,8 +62,8 @@ def make_batch(ground_truth, n_class):
         w = gt[:, 3]
         h = gt[:, 4]
 
-        half_w = w / 2
-        half_h = h / 2
+        half_w = w / 2.
+        half_h = h / 2.
 
         result = np.zeros([gt.shape[0], 4 + n_class])
         result[:, 0] = cx - half_w
@@ -86,7 +86,7 @@ def make_batch(ground_truth, n_class):
 def ssd_postprocess_prediction(y_pred, n_classes, detection_thr):
     y_pred = y_pred[np.newaxis, :]
     bboxes = _bbox_util.detection_out(y_pred,
-                                      background_label_id=-1,
+                                      background_label_id=0,
                                       keep_top_k=200,
                                       confidence_threshold=detection_thr)[0]
 
@@ -316,4 +316,5 @@ class BBoxUtility(object):
                 argsort = np.argsort(results[-1][:, 1])[::-1]
                 results[-1] = results[-1][argsort]
                 results[-1] = results[-1][:keep_top_k]
+
         return results
