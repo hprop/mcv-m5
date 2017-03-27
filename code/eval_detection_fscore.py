@@ -14,8 +14,9 @@ from tools.yolo_utils import *
 dataset_name = 'TT100K_detection' #set to Udacity dataset otherwise
 model_name = 'yolo' #set to yolo otherwise
 # Input parameters to perform data preprocessing
-samplewise_center = True
-samplewise_std_normalization = True
+samplewise_center = False
+samplewise_std_normalization = False
+gcn = True
 img_channel_axis = 0
 
 # Net output post-processing needs two parameters:
@@ -78,7 +79,14 @@ for i,img_path in enumerate(imfiles):
      img -= np.mean(img, axis=img_channel_axis, keepdims=True)
   if samplewise_std_normalization:
      img /= (np.std(img, axis=img_channel_axis, keepdims=True) + 1e-7)
-  
+  if gcn:
+     mean_img = np.mean(img)
+     std_img = np.std(img)
+     # Normalize
+     s = 1
+     eps = 1e-8
+     img = s * (img - mean_img) / max(eps, std_img)
+
   inputs.append(img.copy())
   img_paths.append(img_path)
 
