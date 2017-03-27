@@ -24,6 +24,7 @@ from keras.preprocessing.image import (Iterator,
 
 from tools.save_images import save_img2
 from tools.yolo_utils import yolo_build_gt_batch
+from tools import ssd_utils
 
 # Pad image
 def pad_image(x, pad_amount, mode='reflect', constant=0.):
@@ -348,27 +349,13 @@ class ImageDataGenerator(object):
             x *= self.rescale
 
         if self.gcn:
-            x_before = x.copy()
-            # Compute the void mask
-            mask = np.ones_like(y).astype('int32')
-            mask[y == self.void_label] = 0.
-            mask = np.repeat(mask, 3, axis=0)
-
-            # Mask image
-            x_masked = ma.masked_array(x, mask=~mask.astype(bool))
-
-            # Compute mean and std masked
-            mean_masked = np.mean(x_masked)
-            std_masked = np.std(x_masked)
+            mean_x = np.mean(x)
+            std_x = np.std(x)
 
             # Normalize
             s = 1
             eps = 1e-8
-            x = s * (x - mean_masked) / max(eps, std_masked)
-
-            # Set void pixels to 0
-            x = x*mask
-
+            x = s * (x - mean_x) / max(eps, std_x)
 
         if self.samplewise_center:
             x -= np.mean(x, axis=img_channel_index, keepdims=True)
@@ -502,7 +489,7 @@ class ImageDataGenerator(object):
                         x1,y1,x2,y2 = b.astype(int)[ii]
                         # get the four edge points of the bounding box
                         v1 = np.array([y1,x1,1])
-                        v2 = np.array([y2,x2,1]) 
+                        v2 = np.array([y2,x2,1])
                         v3 = np.array([y2,x1,1])
                         v4 = np.array([y1,x2,1])
                         # transform the 4 points
@@ -511,10 +498,10 @@ class ImageDataGenerator(object):
                         v3 = np.dot(p_transform_matrix, v3)
                         v4 = np.dot(p_transform_matrix, v4)
                         # compute the new bounding box edges
-                        b[ii,0] = np.min([v1[1],v2[1],v3[1],v4[1]]) 
+                        b[ii,0] = np.min([v1[1],v2[1],v3[1],v4[1]])
                         b[ii,1] = np.min([v1[0],v2[0],v3[0],v4[0]])
                         b[ii,2] = np.max([v1[1],v2[1],v3[1],v4[1]])
-                        b[ii,3] = np.max([v1[0],v2[0],v3[0],v4[0]]) 
+                        b[ii,3] = np.max([v1[0],v2[0],v3[0],v4[0]])
 
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range,
@@ -992,7 +979,6 @@ class DirectoryIterator(Iterator):
                 # shuffle gt boxes order
                 np.random.shuffle(y)
 
-
             # Standarize image
             x = self.image_data_generator.standardize(x, y)
 
@@ -1045,9 +1031,11 @@ class DirectoryIterator(Iterator):
             for i, label in enumerate(self.classes[index_array]):
                 batch_y[i, label] = 1.
         elif self.class_mode == 'detection':
-            # TODO detection: check model, other networks may expect a different batch_y format and shape
-            # YOLOLoss expects a particular batch_y format and shape
-            batch_y = yolo_build_gt_batch(batch_y, self.image_shape, self.nb_class)
+            # TODO: improve model checking.
+            if ssd_utils.SSD_LOADED:
+                batch_y = ssd_utils.make_batch(batch_y, self.nb_class)
+            else:  # yolo is used
+                batch_y = yolo_build_gt_batch(batch_y, self.image_shape, self.nb_class)
         elif self.class_mode == None:
             return batch_x
 
