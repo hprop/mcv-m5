@@ -349,27 +349,13 @@ class ImageDataGenerator(object):
             x *= self.rescale
 
         if self.gcn:
-            x_before = x.copy()
-            # Compute the void mask
-            mask = np.ones_like(y).astype('int32')
-            mask[y == self.void_label] = 0.
-            mask = np.repeat(mask, 3, axis=0)
-
-            # Mask image
-            x_masked = ma.masked_array(x, mask=~mask.astype(bool))
-
-            # Compute mean and std masked
-            mean_masked = np.mean(x_masked)
-            std_masked = np.std(x_masked)
+            mean_x = np.mean(x)
+            std_x = np.std(x)
 
             # Normalize
             s = 1
             eps = 1e-8
-            x = s * (x - mean_masked) / max(eps, std_masked)
-
-            # Set void pixels to 0
-            x = x*mask
-
+            x = s * (x - mean_x) / max(eps, std_x)
 
         if self.samplewise_center:
             x -= np.mean(x, axis=img_channel_index, keepdims=True)
