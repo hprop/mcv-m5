@@ -6,6 +6,8 @@ https://github.com/rykov8/ssd_keras/blob/master/ssd_utils.py
 Added extra functions: initialize_module(), make_batch(), extract_priors().
 
 """
+import collections
+
 import numpy as np
 import tensorflow as tf
 
@@ -87,17 +89,32 @@ def ssd_postprocess_prediction(y_pred, n_classes, detection_thr):
     y_pred = y_pred[np.newaxis, :]
     bboxes = _bbox_util.detection_out(y_pred,
                                       background_label_id=0,
-                                      keep_top_k=200,
+                                      keep_top_k=10,
                                       confidence_threshold=detection_thr)[0]
 
-    # bboxes -> np array (n_pos_det, 6)
-    # donde cols: label, confidence, left, top, right, bott
+    # bboxes: np array (n_pos_det, 6)
+    # where cols are: label, confidence, left, top, right, bott
+    # label 0 is reserved for background!
 
-    # TODO: convert structure to yolo's BoundBox class
+    # Rearrange data in the format expected by the framework
+    # c: best confidence score
+    # class_num: range(45)
+    # probs: numpy array of shape (class_num,)
+    BoundingBox = collections.namedtuple('BoundingBox',
+                                         'x y w h c class_num probs')
 
-    return bboxes
+    result = []
+    for label, conf, left, top, right, bott in bboxes:
+        probs = np.zeros(n_classes, dtype='float32')
+        probs[int(label - 1)] = conf
+        w = right - left
+        h = bott - top
+        cx = left + w/2
+        cy = top + h/2
+        bbox = BoundingBox(cx, cy, w, h, conf, np.arange(n_classes), probs)
+        result.append(bbox)
 
-
+    return result
 
 
 class BBoxUtility(object):
