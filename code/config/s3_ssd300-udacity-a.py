@@ -1,6 +1,6 @@
 # Dataset
 problem_type                 = 'detection'     # ['classification' | 'detection' | 'segmentation']
-dataset_name                 = 'TT100K_detection' # Dataset name
+dataset_name                 = 'Udacity' # Dataset name
 dataset_name2                = None            # Second dataset name. None if not Domain Adaptation
 perc_mb2                     = None            # Percentage of data from the second dataset in each minibatch
 
@@ -15,14 +15,14 @@ weights_file                 = 'weights.hdf5'  # Training weight file name
 # Parameters
 train_model                  = True            # Train the model
 test_model                   = False            # Test the model
-pred_model                   = False           # Predict using the model
+pred_model                   = False            # Predict using the model
 
 # Debug
 debug                        = False           # Use only few images for debuging
 debug_images_train           = 32              # N images for training in debug mode (-1 means all)
-debug_images_valid           = 32             # N images for validation in debug mode (-1 means all)
+debug_images_valid           = 32              # N images for validation in debug mode (-1 means all)
 debug_images_test            = 32              # N images for testing in debug mode (-1 means all)
-debug_n_epochs               = 5              # N of training epochs in debug mode
+debug_n_epochs               = 5             # N of training epochs in debug mode
 
 # Batch sizes
 batch_size_train             = 32             # Batch size during training
@@ -44,10 +44,10 @@ seed_valid                   = 1924            # Random seed for the validation 
 seed_test                    = 1924            # Random seed for the testing shuffle
 
 # Training parameters
-optimizer                    = 'adam'          # Optimizer
-learning_rate                = 0.0001          # Training learning rate
+optimizer                    = 'adam'       # Optimizer
+learning_rate                = 0.0001         # Training learning rate
 weight_decay                 = 0.              # Weight decay or L2 parameter norm penalty
-n_epochs                     = 15              # Number of epochs during training
+n_epochs                     = 20              # Number of epochs during training
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback
@@ -57,14 +57,14 @@ save_results_n_legend_rows   = 1               # Number of rows when showwing th
 
 # Callback early stoping
 earlyStopping_enabled        = False           # Enable the Callback
-earlyStopping_monitor        = 'val_loss'          # Metric to monitor
+earlyStopping_monitor        = 'val_loss'    # Metric to monitor
 earlyStopping_mode           = 'min'           # Mode ['max' | 'min']
 earlyStopping_patience       = 100             # Max patience for the early stopping
 earlyStopping_verbose        = 0               # Verbosity of the early stopping
 
 # Callback model check point
 checkpoint_enabled           = True            # Enable the Callback
-checkpoint_monitor           = 'val_loss'           # Metric to monitor
+checkpoint_monitor           = 'val_loss'      # Metric to monitor
 checkpoint_mode              = 'min'           # Mode ['max' | 'min']
 checkpoint_save_best_only    = True           # Save best or last model
 checkpoint_save_weights_only = True            # Save only weights or also model
