@@ -136,18 +136,42 @@ We were able to:
 * Implement this network.
 * Train it and evaluate its results.
 
-We should improve:
+Further improvements:
 
-* Try some other network to compare results with SSD.
+* Try some other architectures to compare results with SSD.
+* Use in SSD a base model other than VGG16.
 
 
 Further information can be found on our [report](https://www.overleaf.com/read/hdtfstjrsqnr) or [presentation](https://docs.google.com/presentation/d/1wJkGmbYqp0s87yg-msrxecCzeZg3Miuwm85n5_zYxIo/edit?usp=sharing).
 
 #### Code explained
 
-From the original repository and some modifications we just worked with the config file and we added one model, SSD. We also worked with the *eval_detection_fscore* file.
+##### YOLO
+
+We modified the global contrast normalization (GCN) provided in the
+framework since it appears broken due to the introduction of a mask
+array to handle void labels (for semantic segmentation). GCN was one
+of the preprocessing stages used in our experiments with the YOLO
+architecture.
+
+Contributions were also done in the *eval_detection_fscore* script to
+add the preprocessing stages used (samplewise center, std
+normalization, GCN).
 
 ##### SSD
+
+Our implementation is based on the code from
+the [rykov8's repository](https://github.com/rykov8/ssd_keras).
+
+Beyond some modifications to adapt the input and output bounding box
+formats to those used in our framework, our major contribution was to
+decouple the base model from the priors declaration and the
+construction of the prediction layers. Thus we are able to build easily
+new SSD topologies with the `build_ssd()` function (see *models/ssd.py*).
+
+We plan to add in further contributions (out of assignment) a SSD
+architecture with a resnet base model.
+
 
 #### Instructions to run the code
 
