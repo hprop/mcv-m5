@@ -20,5 +20,5 @@ for sst in subsets:
                                 for i in range(max_class)])
     count_res[sst] = by_classes
 
-print('Camvid results:')
+print(dataset_name + ' results:')
 print(count_res)
