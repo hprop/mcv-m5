@@ -19,7 +19,10 @@ for sst in subsets:
             im_mat = np.asarray(img)
             by_classes += np.array([np.count_nonzero(im_mat == i)
                                     for i in range(max_class)])
-    count_res[sst] = by_classes
+    classes_per_img = by_classes / len(os.listdir(full_path))
+    count_res[sst] = {'Pixels by class' : by_classes,
+                      'Pixels by class per image' : classes_per_img,
+                      'Number of images' : len(os.listdir(full_path))}
 
 print(dataset_name + ' results:')
 print(count_res)
