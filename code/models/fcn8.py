@@ -131,7 +131,7 @@ def build_fcn8(img_shape=(3, None, None), nclasses=8, l2_reg=0.,
 
     # Load pretrained Model
     if path_weights:
-        load_matcovnet(model, n_classes=nclasses)
+        load_matcovnet(model, path_weights=path_weights, n_classes=nclasses)
 
     # Freeze some layers
     if freeze_layers_from is not None:
