@@ -65,13 +65,16 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
     elif K.image_dim_ordering() == 'tf':
         concat_axis = -1
 
+    x = merge(x, mode='concat', concat_axis=concat_axis)
+
     x = Deconvolution2D(n_filter, 3, 3,
                       init='he_uniform',
                       border_mode='same',
+                      subsample=(2, 2),
                       bias=False,
                       W_regularizer=l2(weight_decay))(x)
-    skip_conn_lev.append(x)
-    x = merge(skip_conn_lev, mode='concat', concat_axis=concat_axis)
+    x.append(skip_conn_lev)
+    x = merge(x, mode='concat', concat_axis=concat_axis)
 
     return x
 
@@ -162,7 +165,7 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
                    growth_rate=12, n_bottleneck=None, compression=1.,
                    dropout=0.2, weight_decay=0.):
     '''
-    Returns a Densenet model
+    Returns a Tiramisu model
 
     :param img_shape: Shape of the input images for the network. Tuple of 3
         containing channels, roes and columns.
