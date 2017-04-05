@@ -5,13 +5,10 @@ from keras.layers.pooling import MaxPooling2D, GlobalAveragePooling2D
 from keras.layers import Input, merge
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
-import sys
-sys.path.append(0, '/Users/jordipuyolescalafell/Desktop/MCV/MLCV2/Project/mcv-m5/code')
 from layers.deconv import Deconvolution2D
 from layers.ourlayers import (CropLayer2D, NdSoftmax)
 import keras.backend as K
 import math
-
 
 #skip connexions employed in upsampling
 skip_connection_list = []
@@ -96,6 +93,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
     :return: Output features (4D tensor -> numpy array)
 
     '''
+
     list_feat = [x]
 
     if K.image_dim_ordering() == 'th':
@@ -117,7 +115,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
                               W_regularizer=l2(weight_decay))(x)
             if dropout is not None:
                 x = Dropout(dropout)(x)
-
+ 
         x = BatchNormalization(mode=0,
                                axis=1,
                                gamma_regularizer=l2(weight_decay),
@@ -143,7 +141,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
     return x
 
 
-def segmentation_block(x,n_classes, weight_decay=weight_decay):
+def segmentation_block(x,n_classes, weight_decay=0.):
     '''
     Classification block on the dataset
 
@@ -168,7 +166,7 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
     Returns a Tiramisu model
 
     :param img_shape: Shape of the input images for the network. Tuple of 3
-        containing channels, roes and columns.
+        containing channels, rows and columns.
     :param n_classes: Number of classes on the dataset.
     :param layers_in_dense_block: Number of layers on each dense block. List.
     :param initial_filters: Number of filters applied on the first 2DConv layer.
@@ -184,8 +182,9 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
 
     '''
 
+    print(str(img_shape))
     model_input = Input(shape=img_shape)
-
+    print("model input shape"+str(model_input))
     n_filters = initial_filters
 
     x = Convolution2D(n_filters, 3, 3,
