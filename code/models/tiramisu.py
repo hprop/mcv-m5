@@ -7,7 +7,8 @@ from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from layers.deconv import Deconvolution2D
 from layers.ourlayers import (CropLayer2D, NdSoftmax)
-import keras.backend as K
+from keras import backend as K
+dim_ordering = K.image_dim_ordering()
 import math
 
 #skip connexions employed in upsampling
@@ -27,9 +28,7 @@ def transition_down(x, n_filter, dropout=None, weight_decay=1E-4):
     :return: Output features (4D tensor -> numpy array)
 
     '''
-    x = BatchNormalization(mode=0,
-                           axis=1,
-                           gamma_regularizer=l2(weight_decay),
+    x = BatchNormalization(gamma_regularizer=l2(weight_decay),
                            beta_regularizer=l2(weight_decay))(x)
     x = Activation('relu')(x)
     x = Convolution2D(n_filter, 1, 1,
@@ -57,6 +56,9 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
     :return: Output features (4D tensor -> numpy array)
 
     '''
+    print("skip_conn"+str(skip_conn_lev))
+    print("block_to_upsample"+str(x))
+    print("filters"+str(n_filter))
     if K.image_dim_ordering() == 'th':
         concat_axis = 1
     elif K.image_dim_ordering() == 'tf':
@@ -64,12 +66,13 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
 
     x = merge(x, mode='concat', concat_axis=concat_axis)
 
-    x = Deconvolution2D(n_filter, 3, 3,
-                      init='he_uniform',
-                      border_mode='same',
-                      subsample=(2, 2),
-                      bias=False,
-                      W_regularizer=l2(weight_decay))(x)
+    #x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,
+    #                  init='he_uniform',
+    #                  border_mode='same',
+    #                  subsample=(2, 2),
+    #                  bias=False,name='deconvolution',
+    #                  W_regularizer=l2(weight_decay))(x)
+    x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2),name='deconvolution')(x)
     x.append(skip_conn_lev)
     x = merge(x, mode='concat', concat_axis=concat_axis)
 
@@ -93,9 +96,9 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
     :return: Output features (4D tensor -> numpy array)
 
     '''
-
+    global block_to_upsample
+    global skip_connection_list
     list_feat = [x]
-
     if K.image_dim_ordering() == 'th':
         concat_axis = 1
     elif K.image_dim_ordering() == 'tf':
@@ -116,10 +119,11 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
             if dropout is not None:
                 x = Dropout(dropout)(x)
  
-        x = BatchNormalization(mode=0,
-                               axis=1,
-                               gamma_regularizer=l2(weight_decay),
-                               beta_regularizer=l2(weight_decay))(x)
+        #x = BatchNormalization(mode=0,
+        #                       axis=1,
+        #                       gamma_regularizer=l2(weight_decay),
+        #                       beta_regularizer=l2(weight_decay))(x)
+        x = BatchNormalization()(x)
         x = Activation('relu')(x)
         x = Convolution2D(n_filter, 3, 3,
                           init='he_uniform',
@@ -130,12 +134,11 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
             x = Dropout(dropout)(x)
 
         list_feat.append(x)
-
+        
         if upsample == True:
             block_to_upsample.append(x)
         else:
             skip_connection_list.append(x)
-
         x = merge(list_feat, mode='concat', concat_axis=concat_axis)
 
     return x
@@ -158,9 +161,9 @@ def segmentation_block(x,n_classes, weight_decay=0.):
     x = NdSoftmax()(x)
     return x
 
-def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
+def build_tiramisu(img_shape=(3, None, None), n_classes=11,
                    layers_in_dense_block=[4, 5, 7, 10, 12, 15], initial_filters=48,
-                   growth_rate=12, n_bottleneck=None, compression=1.,
+                   growth_rate=16, n_bottleneck=None, compression=1.,
                    dropout=0.2, weight_decay=0.):
     '''
     Returns a Tiramisu model
@@ -181,17 +184,17 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
     :return: the Densenet model
 
     '''
-
-    print(str(img_shape))
+    global block_to_upsample
+    global skip_connection_list
     model_input = Input(shape=img_shape)
-    print("model input shape"+str(model_input))
+    padded = ZeroPadding2D(padding=(100, 100), name='pad100')(model_input)
     n_filters = initial_filters
 
     x = Convolution2D(n_filters, 3, 3,
                       init='he_uniform',
                       border_mode='same',
                       name='first_layer',
-                      bias=False)(model_input)
+                      bias=False)(padded)
 
     # Downsampling path #
 
@@ -203,8 +206,8 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
                        weight_decay=weight_decay)
 
     #reverse array. when iterating first upsampling concatenation picks skipped connections from last layer
+    #skip_connection_list = skip_connection_list[::-1]
     skip_connection_list = skip_connection_list[::-1]
-
     # bottleneck #
 
     # We store now the output of the next dense block in a list. We will only upsample these new feature maps
@@ -216,7 +219,7 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
     #for block in reversed(layers_in_dense_block[:-1]):
     #skip_connections layers [12, 10, 7, 5, 4] since last block (15 layers) is already
     # added to block_to_upsample
-    print(str("upsampling"))
+    print("upsampling")
     for idx, block in enumerate(reversed(layers_in_dense_block)):
         if idx != 0:
             curr_filters = block * growth_rate
@@ -239,3 +242,12 @@ def build_tiramisu(img_shape=(3, 224, 224), n_classes=8,
     model = Model(input=[model_input], output=[x])
 
     return model
+
+if __name__ == '__main__':
+    input_shape = [3, 224, 224]
+    print (' > Building')
+    model = build_tiramisu(input_shape, 11)
+    print (' > Compiling')
+    model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
+    model.summary()
+
