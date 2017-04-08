@@ -10,6 +10,7 @@ from layers.ourlayers import (CropLayer2D, NdSoftmax)
 from keras import backend as K
 dim_ordering = K.image_dim_ordering()
 import math
+import tensorflow as tf
 
 #skip connexions employed in upsampling
 skip_connection_list = []
@@ -72,9 +73,8 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
     #                  subsample=(2, 2),
     #                  bias=False,name='deconvolution',
     #                  W_regularizer=l2(weight_decay))(x)
-    x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2),name='deconvolution')(x)
-    x.append(skip_conn_lev)
-    x = merge(x, mode='concat', concat_axis=concat_axis)
+    x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2))(x)
+    tf.concat([x,skip_conn_lev],3)
 
     return x
 
@@ -223,7 +223,7 @@ def build_tiramisu(img_shape=(3, None, None), n_classes=11,
     for idx, block in enumerate(reversed(layers_in_dense_block)):
         if idx != 0:
             curr_filters = block * growth_rate
-            n_filters_keep = math.floor(curr_filters + n_filters + prev_n_filters)
+            n_filters_keep = int(math.floor(curr_filters + n_filters + prev_n_filters))
             print("Block:" + str(idx) + " - Layers: " + str(block) +
                   " - Number filters:" + str(n_filters_keep))
             x = transition_up(skiped_maps, block_to_upsample, n_filters_keep)
