@@ -74,7 +74,9 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
     #                  bias=False,name='deconvolution',
     #                  W_regularizer=l2(weight_decay))(x)
     x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2))(x)
-    tf.concat([x,skip_conn_lev],3)
+    keras_shape = x._keras_shape
+    x = tf.concat([x,skip_conn_lev],3)
+    x._keras_shape = keras_shape
 
     return x
 
