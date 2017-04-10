@@ -6,7 +6,7 @@ from keras.layers import Input, merge
 from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from layers.deconv import Deconvolution2D
-from layers.ourlayers import (CropLayer2D, NdSoftmax)
+from layers.ourlayers import (CropLayer2D, NdSoftmax, Cropping2D)
 from keras import backend as K
 dim_ordering = K.image_dim_ordering()
 import math
@@ -45,7 +45,7 @@ def transition_down(x, n_filter, dropout=None, weight_decay=1E-4):
 
     return x
 
-def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
+def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4, b_diff=0):
     '''
     Transition Up layer on the Densenet
 
@@ -73,10 +73,9 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4):
     #                  subsample=(2, 2),
     #                  bias=False,name='deconvolution',
     #                  W_regularizer=l2(weight_decay))(x)
-    x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2))(x)
-    keras_shape = x._keras_shape
-    x = tf.concat([x,skip_conn_lev],3)
-    x._keras_shape = keras_shape
+    x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2), border_mode='same')(x)
+    x = ZeroPadding2D(padding=((b_diff,0,b_diff,0)))(x)
+    x = merge([x,skip_conn_lev], mode='concat', concat_axis=concat_axis)
 
     return x
 
@@ -100,6 +99,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
     '''
     global block_to_upsample
     global skip_connection_list
+    skips = []
     list_feat = [x]
     if K.image_dim_ordering() == 'th':
         concat_axis = 1
@@ -108,10 +108,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
 
     for i in range(n_layers):
         if n_bottleneck is not None:
-            x = BatchNormalization(mode=0,
-                                   axis=1,
-                                   gamma_regularizer=l2(weight_decay),
-                                   beta_regularizer=l2(weight_decay))(x)
+            x = BatchNormalization()(x)
             x = Activation('relu')(x)
             x = Convolution2D(n_bottleneck, 1, 1,
                               init='he_uniform',
@@ -140,8 +137,12 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
         if upsample == True:
             block_to_upsample.append(x)
         else:
-            skip_connection_list.append(x)
+            skips.append(x)
         x = merge(list_feat, mode='concat', concat_axis=concat_axis)
+
+    if not upsample:
+        skips = merge(skips, mode='concat', concat_axis=concat_axis)
+        skip_connection_list.append(skips)
 
     return x
 
@@ -186,17 +187,20 @@ def build_tiramisu(img_shape=(3, None, None), n_classes=11,
     :return: the Densenet model
 
     '''
+
+    balance_diffs = [1,1,1,1,1]
+
     global block_to_upsample
     global skip_connection_list
-    model_input = Input(shape=img_shape)
-    padded = ZeroPadding2D(padding=(100, 100), name='pad100')(model_input)
+    model_input = Input(shape=(224,224,3))
+    #padded = ZeroPadding2D(padding=(100, 100), name='pad100')(model_input)
     n_filters = initial_filters
 
     x = Convolution2D(n_filters, 3, 3,
                       init='he_uniform',
                       border_mode='same',
                       name='first_layer',
-                      bias=False)(padded)
+                      bias=False)(model_input)
 
     # Downsampling path #
 
@@ -224,19 +228,21 @@ def build_tiramisu(img_shape=(3, None, None), n_classes=11,
     print("upsampling")
     for idx, block in enumerate(reversed(layers_in_dense_block)):
         if idx != 0:
+            skiped_maps = skip_connection_list[idx-1]
             curr_filters = block * growth_rate
             n_filters_keep = int(math.floor(curr_filters + n_filters + prev_n_filters))
             print("Block:" + str(idx) + " - Layers: " + str(block) +
                   " - Number filters:" + str(n_filters_keep))
-            x = transition_up(skiped_maps, block_to_upsample, n_filters_keep)
+            x = transition_up(skiped_maps, block_to_upsample, n_filters_keep,
+                              b_diff=balance_diffs[idx-1])
             block_to_upsample = []
             x = denseblock(x, block, growth_rate, n_bottleneck=n_bottleneck,
                            dropout=dropout, weight_decay=weight_decay, upsample=True)
-        skiped_maps = skip_connection_list[idx]
         prev_n_filters = math.floor(compression * growth_rate * block)
         n_filters -= math.floor(compression * growth_rate * block)
 
 
+    #x = Cropping2D(cropping=((100, 100), (100, 100)))(x)
 
     # Segmentation block #
     x = segmentation_block(x,n_classes, weight_decay=weight_decay)
