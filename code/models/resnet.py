@@ -1,12 +1,14 @@
 from keras.models import Model
 from keras.layers import Flatten, Dense
 from keras.applications import resnet50
+from keras.applications import imagenet_utils
 
 
 # Paper: https://arxiv.org/pdf/1512.03385.pdf
 
 def build_resnet50(img_shape=(3, 224, 224), n_classes=1000, l2_reg=0.,
-                   load_pretrained=False, freeze_layers_from='base_model'):
+                   load_pretrained=False, freeze_layers_from='base_model',
+                   include_top=True):
     # Decide if load pretrained weights from imagenet
     weights = 'imagenet' if load_pretrained else None
 
@@ -16,12 +18,15 @@ def build_resnet50(img_shape=(3, 224, 224), n_classes=1000, l2_reg=0.,
                                    input_shape=img_shape)
 
     # Add final layers
-    x = base_model.output
-    x = Flatten(name='flatten')(x)
-    predictions = Dense(n_classes, activation='softmax', name='predictions')(x)
+    if include_top:
+        x = base_model.output
+        x = Flatten(name='flatten')(x)
+        predictions = Dense(n_classes, activation='softmax', name='predictions')(x)
 
-    # Declare final model
-    model = Model(input=base_model.input, output=predictions)
+        # Declare final model
+        model = Model(input=base_model.input, output=predictions)
+    else:
+        model = Model(input=base_model.input, output=base_model.output)
 
     # Freeze some layers
     if freeze_layers_from is not None:

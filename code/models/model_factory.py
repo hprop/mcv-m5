@@ -15,7 +15,7 @@ from models.densenet import build_densenet
 
 # Detection models
 from models.yolo import build_yolo
-from models.ssd import build_ssd300
+from models.ssd import build_ssd300, build_ssd300_pretrained, build_ssd_resnet50
 
 # Segmentation models
 from models.fcn8 import build_fcn8
@@ -59,7 +59,7 @@ class Model_Factory():
                             cf.target_size_train[1])
                 loss = YOLOLoss(in_shape, cf.dataset.n_classes, cf.dataset.priors)
                 metrics = [YOLOMetrics(in_shape, cf.dataset.n_classes, cf.dataset.priors)]
-            elif cf.model_name == 'ssd300':
+            elif cf.model_name in ['ssd300', 'ssd300_pretrained', 'ssd_resnet50']:
                 # TODO: in_shape ok for ssd?
                 in_shape = (cf.target_size_train[0],
                             cf.target_size_train[1],
@@ -100,7 +100,7 @@ class Model_Factory():
         if cf.model_name in ['lenet', 'alexNet', 'vgg16', 'vgg19', 'resnet50',
                              'InceptionV3', 'densenet', 'fcn8', 'unet', 'segnet',
                              'segnet_basic', 'resnetFCN', 'yolo', 'tiny-yolo',
-                             'ssd300']:
+                             'ssd300', 'ssd300_pretrained', 'ssd_resnet50']:
             if optimizer is None:
                 raise ValueError('optimizer can not be None')
 
@@ -196,6 +196,20 @@ class Model_Factory():
                                freeze_layers_from=cf.freeze_layers_from, tiny=True)
         elif cf.model_name == 'ssd300':
             model = build_ssd300(in_shape, cf.dataset.n_classes + 1)
+            # TODO: find best parameters
+            ssd_utils.initialize_module(model, in_shape,
+                                        cf.dataset.n_classes + 1,
+                                        overlap_threshold=0.5,
+                                        nms_thresh=0.45, top_k=400)
+        elif cf.model_name == 'ssd300_pretrained':
+            model = build_ssd300_pretrained(in_shape, cf.dataset.n_classes + 1)
+            # TODO: find best parameters
+            ssd_utils.initialize_module(model, in_shape,
+                                        cf.dataset.n_classes + 1,
+                                        overlap_threshold=0.5,
+                                        nms_thresh=0.45, top_k=400)
+        elif cf.model_name == 'ssd_resnet50':
+            model = build_ssd_resnet50(in_shape, cf.dataset.n_classes + 1)
             # TODO: find best parameters
             ssd_utils.initialize_module(model, in_shape,
                                         cf.dataset.n_classes + 1,
