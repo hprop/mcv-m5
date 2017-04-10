@@ -8,6 +8,8 @@ if dim_ordering == 'th':
 from keras import backend as K
 from keras.layers.core import Layer
 from keras.layers import UpSampling2D
+from keras.engine import InputSpec
+
 
 
 # Function from Lasagne framework
@@ -272,3 +274,122 @@ def bilinear4D_T(ratio, num_input_channels, num_filters, normalize=True):
     kern = T.extra_ops.repeat(kern, num_input_channels, axis=0)
     kern = T.extra_ops.repeat(kern, num_filters, axis=1)
     return kern.eval()
+
+class Cropping2D(Layer):
+    """Cropping layer for 2D input (e.g. picture).
+
+    It crops along spatial dimensions, i.e. width and height.
+
+    # Arguments
+        cropping: tuple of tuple of int (length 2)
+            How many units should be trimmed off at the beginning and end of
+            the 2 cropping dimensions (width, height).
+        dim_ordering: 'th' or 'tf'.
+            In 'th' mode, the channels dimension (the depth)
+            is at index 1, in 'tf' mode is it at index 3.
+            It defaults to the `image_dim_ordering` value found in your
+            Keras config file at `~/.keras/keras.json`.
+            If you never set it, then it will be "tf".
+
+    # Input shape
+        4D tensor with shape:
+        `(samples, depth, first_axis_to_crop, second_axis_to_crop)`
+
+    # Output shape
+        4D tensor with shape:
+        `(samples, depth, first_cropped_axis, second_cropped_axis)`
+
+    # Examples
+
+    ```python
+        # Crop the input 2D images or feature maps
+        model = Sequential()
+        model.add(Cropping2D(cropping=((2, 2), (4, 4)), input_shape=(3, 28, 28)))
+        # now model.output_shape == (None, 3, 24, 20)
+        model.add(Convolution2D(64, 3, 3, border_mode='same))
+        model.add(Cropping2D(cropping=((2, 2), (2, 2))))
+        # now model.output_shape == (None, 64, 20, 16)
+
+    ```
+    """
+
+    def __init__(self, cropping=((0, 0), (0, 0)), dim_ordering='default', **kwargs):
+        super(Cropping2D, self).__init__(**kwargs)
+        if dim_ordering == 'default':
+            dim_ordering = K.image_dim_ordering()
+        self.cropping = tuple(cropping)
+        if len(self.cropping) != 2:
+            raise ValueError('`cropping` must be a tuple length of 2.')
+        if len(self.cropping[0]) != 2:
+            raise ValueError('`cropping[0]` must be a tuple length of 2.')
+        if len(self.cropping[1]) != 2:
+            raise ValueError('`cropping[1]` must be a tuple length of 2.')
+        if dim_ordering not in {'tf', 'th'}:
+            raise ValueError('dim_ordering must be in {tf, th}.')
+        self.dim_ordering = dim_ordering
+        self.input_spec = [InputSpec(ndim=4)]
+
+    def build(self, input_shape):
+        self.input_spec = [InputSpec(shape=input_shape)]
+        self.built = True
+
+    def get_output_shape_for(self, input_shape):
+        if self.dim_ordering == 'th':
+            return (input_shape[0],
+                    input_shape[1],
+                    input_shape[2] - self.cropping[0][0] - self.cropping[0][1] if input_shape[2] else None,
+                    input_shape[3] - self.cropping[1][0] - self.cropping[1][1] if input_shape[3] else None)
+        elif self.dim_ordering == 'tf':
+            return (input_shape[0],
+                    input_shape[1] - self.cropping[0][0] - self.cropping[0][1] if input_shape[1] else None,
+                    input_shape[2] - self.cropping[1][0] - self.cropping[1][1] if input_shape[2] else None,
+                    input_shape[3])
+        else:
+            raise ValueError('Invalid dim_ordering:', self.dim_ordering)
+
+    def call(self, x, mask=None):
+        if self.dim_ordering == 'th':
+            if self.cropping[0][1] == self.cropping[1][1] == 0:
+                return x[:,
+                         :,
+                         self.cropping[0][0]:,
+                         self.cropping[1][0]:]
+            elif self.cropping[0][1] == 0:
+                return x[:,
+                         :,
+                         self.cropping[0][0]:,
+                         self.cropping[1][0]:-self.cropping[1][1]]
+            elif self.cropping[1][1] == 0:
+                return x[:,
+                         :,
+                         self.cropping[0][0]:-self.cropping[0][1],
+                         self.cropping[1][0]:]
+            return x[:,
+                     :,
+                     self.cropping[0][0]:-self.cropping[0][1],
+                     self.cropping[1][0]:-self.cropping[1][1]]
+        elif self.dim_ordering == 'tf':
+            if self.cropping[0][1] == self.cropping[1][1] == 0:
+                return x[:,
+                         self.cropping[0][0]:,
+                         self.cropping[1][0]:,
+                         :]
+            elif self.cropping[0][1] == 0:
+                return x[:,
+                         self.cropping[0][0]:,
+                         self.cropping[1][0]:-self.cropping[1][1],
+                         :]
+            elif self.cropping[1][1] == 0:
+                return x[:,
+                         self.cropping[0][0]:-self.cropping[0][1],
+                         self.cropping[1][0]:,
+                         :]
+            return x[:,
+                     self.cropping[0][0]:-self.cropping[0][1],
+                     self.cropping[1][0]:-self.cropping[1][1],
+                     :]
+
+    def get_config(self):
+        config = {'cropping': self.cropping}
+        base_config = super(Cropping2D, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))

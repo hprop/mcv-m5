@@ -19,6 +19,7 @@ from models.ssd import build_ssd300
 
 # Segmentation models
 from models.fcn8 import build_fcn8
+from models.tiramisu import build_tiramisu
 #from models.unet import build_unet
 #from models.segnet import build_segnet
 #from models.resnetFCN import build_resnetFCN
@@ -100,7 +101,7 @@ class Model_Factory():
         if cf.model_name in ['lenet', 'alexNet', 'vgg16', 'vgg19', 'resnet50',
                              'InceptionV3', 'densenet', 'fcn8', 'unet', 'segnet',
                              'segnet_basic', 'resnetFCN', 'yolo', 'tiny-yolo',
-                             'ssd300']:
+                             'ssd300','tiramisu']:
             if optimizer is None:
                 raise ValueError('optimizer can not be None')
 
@@ -201,6 +202,15 @@ class Model_Factory():
                                         cf.dataset.n_classes + 1,
                                         overlap_threshold=0.5,
                                         nms_thresh=0.45, top_k=400)
+        elif cf.model_name == 'tiramisu':
+            model = build_tiramisu(in_shape, cf.dataset.n_classes,
+                                   layers_in_dense_block=cf.layers_in_dense_block,
+                                   initial_filters=cf.initial_filters,
+                                   growth_rate=cf.growth_rate,
+                                   n_bottleneck=cf.n_bottleneck,
+                                   compression=cf.compression,
+                                   dropout=cf.dropout,
+                                   weight_decay=cf.weight_decay)
         else:
             raise ValueError('Unknown model')
 
