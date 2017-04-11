@@ -7,6 +7,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.regularizers import l2
 from layers.deconv import Deconvolution2D
 from layers.ourlayers import (CropLayer2D, NdSoftmax, Cropping2D)
+from initializations.initializations import bilinear_init
 from keras import backend as K
 dim_ordering = K.image_dim_ordering()
 import math
@@ -73,7 +74,11 @@ def transition_up(skip_conn_lev, x, n_filter, weight_decay=1E-4, b_diff=0):
     #                  subsample=(2, 2),
     #                  bias=False,name='deconvolution',
     #                  W_regularizer=l2(weight_decay))(x)
-    x = Deconvolution2D(n_filter, 3, 3,x._keras_shape,subsample=(2, 2), border_mode='same')(x)
+    x = Deconvolution2D(n_filter, 3, 3,
+                        x._keras_shape,
+                        init=bilinear_init,
+                        subsample=(2, 2),
+                        border_mode='same')(x)
     x = ZeroPadding2D(padding=((b_diff,0,b_diff,0)))(x)
     x = merge([x,skip_conn_lev], mode='concat', concat_axis=concat_axis)
 
@@ -117,7 +122,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
                               W_regularizer=l2(weight_decay))(x)
             if dropout is not None:
                 x = Dropout(dropout)(x)
- 
+
         #x = BatchNormalization(mode=0,
         #                       axis=1,
         #                       gamma_regularizer=l2(weight_decay),
@@ -133,7 +138,7 @@ def denseblock(x, n_layers, n_filter, n_bottleneck=None, dropout=None,
             x = Dropout(dropout)(x)
 
         list_feat.append(x)
-        
+
         if upsample == True:
             block_to_upsample.append(x)
         else:
@@ -258,4 +263,3 @@ if __name__ == '__main__':
     print (' > Compiling')
     model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
     model.summary()
-

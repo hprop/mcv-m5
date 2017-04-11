@@ -5,6 +5,7 @@ import warnings
 import skimage.io as io
 from skimage.color import rgb2gray, gray2rgb
 import skimage.transform
+import cv2
 import numpy as np
 from numpy import ma
 from numpy.linalg import inv
@@ -212,6 +213,9 @@ class ImageDataGenerator(object):
                  void_label=0.,
                  horizontal_flip=False,
                  vertical_flip=False,
+                 saturation_scale_range = 1.,
+                 exposure_scale_range = 1.,
+                 hue_shift_range = 0.,
                  rescale=None,
                  preprocessing_function=None,
                  spline_warp=False,
@@ -506,6 +510,32 @@ class ImageDataGenerator(object):
         if self.channel_shift_range != 0:
             x = random_channel_shift(x, self.channel_shift_range,
                                      img_channel_index)
+
+        if (self.saturation_scale_range > 1) or (self.exposure_scale_range > 1) or (self.hue_shift_range != 0):
+            if img_channel_index == 2:
+                hsv = cv2.cvtColor(x, cv2.COLOR_RGB2HSV)
+            elif img_channel_index == 0:
+                hsv = cv2.cvtColor(np.transpose(x,(1,2,0)), cv2.COLOR_RGB2HSV)
+
+            if self.hue_shift_range != 0:
+                shift = 360*np.random.uniform(-self.hue_shift_range,self.hue_shift_range)
+                hsv[:,:,0] = np.clip(hsv[:,:,0]+shift, 0, 360)
+
+            if self.saturation_scale_range > 1:
+                scale = np.random.uniform(1,self.saturation_scale_range)
+                if np.random.uniform() > 0.5:
+                    scale = 1./scale
+                hsv[:,:,1] = np.clip(hsv[:,:,1]*scale, 0, 1)
+
+            if self.exposure_scale_range > 1:
+                scale = np.random.uniform(1,self.saturation_scale_range)
+                if np.random.uniform() > 0.5:
+                    scale = 1./scale
+                hsv[:,:,2] = np.clip(hsv[:,:,2]*scale, 0, 1)
+
+            x = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+            if img_channel_index == 0:
+                x = np.transpose(x,(2,0,1))
 
         if self.horizontal_flip:
             if np.random.random() < 0.5:
