@@ -46,9 +46,9 @@ seed_test                    = 1924            # Random seed for the testing shu
 
 # Training parameters
 optimizer                    = 'rmsprop'       # Optimizer
-learning_rate                = 0.0001          # Training learning rate
-weight_decay                 = 0.              # Weight decay or L2 parameter norm penalty
-n_epochs                     = 1000            # Number of epochs during training
+learning_rate                = 0.00001          # Training learning rate
+weight_decay                 = 0.               # Weight decay or L2 parameter norm penalty
+n_epochs                     = 1000             # Number of epochs during training
 
 # Callback save results
 save_results_enabled         = False           # Enable the Callback
@@ -79,6 +79,22 @@ lrDecayScheduler_enabled     = False           # Enable the Callback
 lrDecayScheduler_epochs      = [5, 10, 20]     # List of epochs were decay is applied or None for all epochs
 lrDecayScheduler_rate        = 2               # Decay rate (new_lr = lr / decay_rate). Usually between 2 and 10.
 
+# Callback learning rate scheduler
+LRScheduler_enabled          = False             # Enable the Callback
+LRScheduler_batch_epoch      = 'batch'          # Schedule the LR each 'batch' or 'epoch'
+LRScheduler_type             = 'poly'         # Type of scheduler ['linear' | 'step' | 'square' | 'sqrt' | 'poly']
+LRScheduler_M                = 75000            # Number of iterations/epochs expected until convergence
+LRScheduler_decay            = 0.1              # Decay for 'step' method
+LRScheduler_S                = 10000            # Step for the 'step' method
+LRScheduler_power            = 0.9              # Power for te poly method
+
+# Callback TensorBoard
+TensorBoard_enabled          = True             # Enable the Callback
+TensorBoard_histogram_freq   = 1                # Frequency (in epochs) at which to compute activation histograms for the layers of the model. If set to 0, histograms won't be computed.
+TensorBoard_write_graph      = True             # Whether to visualize the graph in Tensorboard. The log file can become quite large when write_graph is set to True.
+TensorBoard_write_images     = False            # Whether to write model weights to visualize as image in Tensorboard.
+TensorBoard_logs_folder      = None             #
+
 # Data augmentation for training and normalization
 norm_imageNet_preprocess           = False  # Normalize following imagenet procedure
 norm_fit_dataset                   = True   # If True it recompute std and mean from images. Either it uses the std and mean set at the dataset config file
@@ -98,10 +114,13 @@ da_height_shift_range              = 0.0    # Rnd vertical shift
 da_shear_range                     = 0.0    # Shear in radians
 da_zoom_range                      = 0.0    # Zoom
 da_channel_shift_range             = 0.     # Channecf.l shifts
-da_fill_mode                       = 'constant'  # Fill mode
+da_fill_mode                       = 'nearest'  # Fill mode
 da_cval                            = 0.     # Void image value
-da_horizontal_flip                 = False  # Rnd horizontal flip
+da_horizontal_flip                 = True  # Rnd horizontal flip
 da_vertical_flip                   = False  # Rnd vertical flip
+da_saturation_scale_range          = 2.25         # Saturation channel scale Rnd on range (1/s , s)
+da_exposure_scale_range            = 2.25         # Exposure channel scale Rnd on range (1/s , s)
+da_hue_shift_range                 = 0.1         # Hue channel shift Rnd on range (-360*h , 360*h)
 da_spline_warp                     = False  # Enable elastic deformation
 da_warp_sigma                      = 10     # Elastic deformation sigma
 da_warp_grid_size                  = 3      # Elastic deformation gridSize
