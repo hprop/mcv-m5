@@ -123,7 +123,7 @@ new SSD topologies with the `build_ssd()` function (see *models/ssd.py*).
 We plan to add in further contributions (out of assignment) a SSD
 architecture with a resnet base model.
 
-#####Modifications on the framework
+##### Modifications on the framework
 
 * Global contrast normalization in code/tools/data_loader.py to be computed over all the image.
 
@@ -162,7 +162,7 @@ We followed the [original paper](https://arxiv.org/pdf/1611.09326.pdf). We also 
 
 To solve some missmatches we do Zero Padding after deconvolutional layers (to concatenate with the skip connections). Bottleneck and compression algorithms are implemented. We also implemented eval_dataset.py
 
-#####Modifications on the framework
+##### Modifications on the framework
 
 * Custom Cropping2D layer in layers/outlayers.py (it handles symbolic input shapes as in keras version 2).
 
