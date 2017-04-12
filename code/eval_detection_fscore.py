@@ -14,16 +14,12 @@ from tools import ssd_utils
 
 # Input parameters to select the Dataset and the model used
 dataset_name = 'TT100K_detection' #set to Udacity dataset otherwise
-model_name = 'ssd300' #options: 'yolo', 'tiny-yolo', 'ssd300'
+model_name = 'ssd300_pretrained' #options: 'yolo', 'tiny-yolo', 'ssd300',
+                            #'ssd300_pretrained' 'ssd_resnet50'
+
 # Input parameters to perform data preprocessing
 samplewise_center = False
 samplewise_std_normalization = False
-
-# Net output post-processing needs two parameters:
-detection_threshold = 0.5 # Min probablity for a prediction to be considered
-nms_threshold       = 0.7 # Non Maximum Suppression threshold
-# IMPORTANT: the values of these two params will affect the final performance of the netwrok
-#            you are allowed to find their optimal values in the validation/train sets
 
 if len(sys.argv) < 3:
   print "USAGE: python eval_detection_fscore.py weights_file path_to_images"
@@ -41,14 +37,13 @@ else:
     print "Error: Dataset not found!"
     quit()
 
-priors = [[0.9,1.2], [1.05,1.35], [2.15,2.55], [3.25,3.75], [5.35,5.1]]
-input_shape = (320, 320, 3) # (c, w, h) in yolo/tiny-yolo, (w, h, c) in ssd
-
-NUM_PRIORS  = len(priors)
 NUM_CLASSES = len(classes)
 
 if model_name in ['yolo', 'tiny-yolo']:
+  input_shape = (3, 320, 320)
   HEIGHT, WIDTH  = input_shape[1:]
+  priors = [[0.9,1.2], [1.05,1.35], [2.15,2.55], [3.25,3.75], [5.35,5.1]]
+  NUM_PRIORS  = len(priors)
   img_channel_axis = 0
   tiny_yolo = (model_name == 'tiny-yolo')
   model = build_yolo(img_shape=input_shape,n_classes=NUM_CLASSES, n_priors=5,
@@ -56,9 +51,34 @@ if model_name in ['yolo', 'tiny-yolo']:
                      tiny=tiny_yolo)
 
 elif model_name == 'ssd300':
+  input_shape = (320, 320, 3)
+  detection_threshold = 0.5 # Min probablity for a prediction to be considered
+  nms_threshold       = 0.5 # Non Maximum Suppression threshold
   HEIGHT, WIDTH  = input_shape[:2]
   img_channel_axis = 2
   model = ssd.build_ssd300(input_shape, NUM_CLASSES + 1)
+  ssd_utils.initialize_module(model, input_shape, NUM_CLASSES + 1,
+                              overlap_threshold=0.5, nms_thresh=nms_threshold,
+                              top_k=40)
+
+elif model_name == 'ssd300_pretrained':
+  input_shape = (320, 320, 3)
+  detection_threshold = 0.5 # Min probablity for a prediction to be considered
+  nms_threshold       = 0.5 # Non Maximum Suppression threshold
+  HEIGHT, WIDTH  = input_shape[:2]
+  img_channel_axis = 2
+  model = ssd.build_ssd300_pretrained(input_shape, NUM_CLASSES + 1)
+  ssd_utils.initialize_module(model, input_shape, NUM_CLASSES + 1,
+                              overlap_threshold=0.5, nms_thresh=nms_threshold,
+                              top_k=40)
+
+elif model_name == 'ssd_resnet50':
+  input_shape = (320, 320, 3)
+  detection_threshold = 0.3 # Min probablity for a prediction to be considered
+  nms_threshold       = 0.3 # Non Maximum Suppression threshold
+  HEIGHT, WIDTH  = input_shape[:2]
+  img_channel_axis = 2
+  model = ssd.build_ssd_resnet50(input_shape, NUM_CLASSES + 1)
   ssd_utils.initialize_module(model, input_shape, NUM_CLASSES + 1,
                               overlap_threshold=0.5, nms_thresh=nms_threshold,
                               top_k=40)
@@ -81,8 +101,10 @@ chunk_size = 128 # we are going to process all image files in chunks
 ok = 0.
 total_true = 0.
 total_pred = 0.
+total_img = 0
+total_time = 0.
 
-for i,img_path in enumerate(imfiles):
+for i, img_path in enumerate(imfiles):
   img = image.load_img(img_path, target_size=(HEIGHT, WIDTH))
   img = image.img_to_array(img)
   img = img / 255.
@@ -98,7 +120,11 @@ for i,img_path in enumerate(imfiles):
     inputs = np.array(inputs)
     start_time = time.time()
     net_out = model.predict(inputs, batch_size=16, verbose=1)
-    print ('{} images predicted in {:.5f} seconds. {:.5f} fps').format(len(inputs),time.time() - start_time,(len(inputs)/(time.time() - start_time)))
+    elapsed_time = time.time() - start_time
+    total_time += elapsed_time
+    total_img += len(img_paths)
+    print ('{} images predicted in {:.5f} seconds. {:.5f} fps').format(
+      len(inputs), elapsed_time, len(inputs) / elapsed_time)
 
     # find correct detections (per image)
     for i,img_path in enumerate(img_paths):
@@ -123,16 +149,21 @@ for i,img_path in enumerate(imfiles):
         total_true += len(boxes_true)
         true_matched = np.zeros(len(boxes_true))
 
-#        import pdb; pdb.set_trace()
-
+        # boxes_pred: list of BBox objects (x, y, w, h, c=score,
+        #                                   probs=array[0..44])
         for b in boxes_pred:
+          import pdb; pdb.set_trace()
+
+          # discard if detection is lower than `detection_threshold`
           if b.probs[np.argmax(b.probs)] < detection_threshold:
              continue
           total_pred += 1.
-          for t,a in enumerate(boxes_true):
+
+          # compare with real bboxes
+          for t, a in enumerate(boxes_true):
             if true_matched[t]:
               continue
-            if box_iou(a, b) > 0.1 and np.argmax(a.probs) == np.argmax(b.probs):
+            if box_iou(a, b) > 0.5 and np.argmax(a.probs) == np.argmax(b.probs):
               true_matched[t] = 1
               ok += 1.
               break
@@ -153,3 +184,6 @@ for i,img_path in enumerate(imfiles):
     print('Recall     = '+str(r))
     f = 0. if (p+r) == 0 else (2*p*r/(p+r))
     print('F-score    = '+str(f))
+
+
+print('Average FPS: {:.5f}'.format(total_img/total_time))
