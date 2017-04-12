@@ -64,14 +64,13 @@ We followed the [original paper](https://arxiv.org/pdf/1608.06993.pdf). The impl
 
 #### Instructions to run the code
 
-To make a test of a model called *modelX* and save the results in */home/master/folderX*, if you have the datasets in  */home/master/datasets_folder*:
+To make a test of the experiment corresponding to the config file *experimentX* in the *code/config* folder on the repository and save the results in */home/master/folderX*, if you have the datasets in  */home/master/datasets_folder*:
 
 * If you don't have the repository, clone it
-* Download its weights on the *Weights* section (file *weights.hdf5* on folder *modelX*) of this Readme and store the file on */home/master/folderX*
-* Download its config file on the *Config files* (file *config_modelX.py*) section of this Readme and store it on *mcv-m5/code/config*
+* Download its weights on the *Weights* section (file *weights.hdf5* on folder *experimentX*) of this Readme and store the file on */home/master/folderX*
 * Go to *mcv-m5/code* and run:
 
-`python train.py -c config/config_modelX.py -e ~/folderX -s /data/module5 -l ~/datasets_folder/`
+`python train.py -c config/experimentX.py -e ~/folderX -s /data/module5 -l ~/datasets_folder/`
 
 #### Weights
 
