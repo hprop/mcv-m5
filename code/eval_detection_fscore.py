@@ -1,7 +1,10 @@
 import os
 import sys,time
-import numpy as np
+import tempfile
+import collections
 import math
+
+import numpy as np
 import cv2
 
 from keras.applications.imagenet_utils import preprocess_input
@@ -21,6 +24,18 @@ model_name = 'ssd300_pretrained' #options: 'yolo', 'tiny-yolo', 'ssd300',
 samplewise_center = False
 samplewise_std_normalization = False
 
+# Save results in a temporary directory, distributed by size (small, medium,
+# big)
+save_results = True
+if save_results:
+  save_path = tempfile.mkdtemp(prefix='eval-detection-results-')
+  os.mkdir(os.path.join(save_path, 'small'))
+  os.mkdir(os.path.join(save_path, 'medium'))
+  os.mkdir(os.path.join(save_path, 'big'))
+  print('Saving results in', save_path)
+else:
+  save_path = None
+
 if len(sys.argv) < 3:
   print "USAGE: python eval_detection_fscore.py weights_file path_to_images"
   quit()
@@ -38,11 +53,11 @@ else:
     quit()
 
 NUM_CLASSES = len(classes)
+priors = [[0.9,1.2], [1.05,1.35], [2.15,2.55], [3.25,3.75], [5.35,5.1]]
 
 if model_name in ['yolo', 'tiny-yolo']:
   input_shape = (3, 320, 320)
   HEIGHT, WIDTH  = input_shape[1:]
-  priors = [[0.9,1.2], [1.05,1.35], [2.15,2.55], [3.25,3.75], [5.35,5.1]]
   NUM_PRIORS  = len(priors)
   img_channel_axis = 0
   tiny_yolo = (model_name == 'tiny-yolo')
@@ -104,6 +119,18 @@ total_pred = 0.
 total_img = 0
 total_time = 0.
 
+analysis_small = {'hit': 0, 'real': 0, 'pred': 0, 'files': []}
+analysis_medium = {'hit': 0, 'real': 0, 'pred': 0, 'files': []}
+analysis_big = {'hit': 0, 'real': 0, 'pred': 0, 'files': []}
+
+def classify_box(b):
+  if b.h <= 0.25:
+    return 'small'
+  elif b.h <= 0.50:
+    return 'medium'
+  else:
+    return 'big'
+
 for i, img_path in enumerate(imfiles):
   img = image.load_img(img_path, target_size=(HEIGHT, WIDTH))
   img = image.img_to_array(img)
@@ -147,13 +174,11 @@ for i, img_path in enumerate(imfiles):
           boxes_true.append(bx)
 
         total_true += len(boxes_true)
-        true_matched = np.zeros(len(boxes_true))
+        true_matched = np.full(len(boxes_true), -1)
 
         # boxes_pred: list of BBox objects (x, y, w, h, c=score,
         #                                   probs=array[0..44])
-        for b in boxes_pred:
-          import pdb; pdb.set_trace()
-
+        for i, b in enumerate(boxes_pred):
           # discard if detection is lower than `detection_threshold`
           if b.probs[np.argmax(b.probs)] < detection_threshold:
              continue
@@ -161,18 +186,58 @@ for i, img_path in enumerate(imfiles):
 
           # compare with real bboxes
           for t, a in enumerate(boxes_true):
-            if true_matched[t]:
+            if true_matched[t] >= 0:
               continue
             if box_iou(a, b) > 0.5 and np.argmax(a.probs) == np.argmax(b.probs):
-              true_matched[t] = 1
+              true_matched[t] = i
               ok += 1.
               break
 
-        # # You can visualize/save per image results with this:
+        for i, b in enumerate(boxes_true):
+          size = classify_box(b)
+          if size == 'small':
+            analysis_small['real'] += 1
+            analysis_small['hit'] += 1 if (true_matched[i] >= 0) else 0
+            analysis_small['pred'] += 1 if (true_matched[i] >= 0) else 0
+            analysis_small['files'].append(img_path)
+
+          elif size == 'medium':
+            analysis_medium['real'] += 1
+            analysis_medium['hit'] += 1 if (true_matched[i] >= 0) else 0
+            analysis_medium['pred'] += 1 if (true_matched[i] >= 0) else 0
+            analysis_medium['files'].append(img_path)
+
+          elif size == 'big':
+            analysis_big['real'] += 1
+            analysis_big['hit'] += 1 if (true_matched[i] >= 0) else 0
+            analysis_big['pred'] += 1 if (true_matched[i] >= 0) else 0
+            analysis_big['files'].append(img_path)
+
+          if save_path:
+            dst = os.path.join(save_path, size, os.path.basename(img_path))
+            im = cv2.imread(img_path)
+            im = yolo_draw_detections(boxes_pred, im, priors, classes,
+                                      detection_threshold, nms_threshold)
+            cv2.imwrite(dst, im)
+
+          # TODO: save result
+          # # You can visualize/save per image results with this:
         # im = cv2.imread(img_path)
         # im = yolo_draw_detections(boxes_pred, im, priors, classes, detection_threshold, nms_threshold)
         # cv2.imwrite('/tmp/detection_result.png', im)
         # raw_input('Press Enter to continue...')
+
+
+        # false positives counting
+        false_neg = [i for i in range(len(boxes_pred)) if i not in true_matched]
+        for i in false_neg:
+          size = classify_box(boxes_pred[i])
+          if size == 'small':
+            analysis_small['pred'] += 1
+          if size == 'medium':
+            analysis_medium['pred'] += 1
+          if size == 'big':
+            analysis_big['pred'] += 1
 
     inputs = []
     img_paths = []
@@ -187,3 +252,19 @@ for i, img_path in enumerate(imfiles):
 
 
 print('Average FPS: {:.5f}'.format(total_img/total_time))
+
+def print_stats(analisys, size):
+  if analisys['pred'] == 0:
+    prec = 0
+  else:
+    prec = analisys['hit'] / analisys['pred']
+
+  rec = analisys['hit'] / analisys['real']
+  fsco = 0. if (prec + rec) == 0 else (2 * prec * rec / (prec + rec))
+
+  print('Analysis {}: Prec {:.5f}, Rec {:.5f}, F1 {:.5f}'.format(
+    size, prec, rec, fsco))
+
+print_stats(analysis_small, 'small')
+print_stats(analysis_medium, 'medium')
+print_stats(analysis_big, 'big')
