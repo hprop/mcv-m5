@@ -17,7 +17,7 @@ from tools import ssd_utils
 
 # Input parameters to select the Dataset and the model used
 dataset_name = 'TT100K_detection' #set to Udacity dataset otherwise
-model_name = 'ssd300_pretrained' #options: 'yolo', 'tiny-yolo', 'ssd300',
+model_name = 'ssd300' #options: 'yolo', 'tiny-yolo', 'ssd300',
                             #'ssd300_pretrained' 'ssd_resnet50'
 
 # Input parameters to perform data preprocessing
@@ -89,14 +89,14 @@ elif model_name == 'ssd300_pretrained':
 
 elif model_name == 'ssd_resnet50':
   input_shape = (320, 320, 3)
-  detection_threshold = 0.3 # Min probablity for a prediction to be considered
+  detection_threshold = 0.4 # Min probablity for a prediction to be considered
   nms_threshold       = 0.3 # Non Maximum Suppression threshold
   HEIGHT, WIDTH  = input_shape[:2]
   img_channel_axis = 2
   model = ssd.build_ssd_resnet50(input_shape, NUM_CLASSES + 1)
   ssd_utils.initialize_module(model, input_shape, NUM_CLASSES + 1,
-                              overlap_threshold=0.5, nms_thresh=nms_threshold,
-                              top_k=40)
+                              overlap_threshold=0.2, nms_thresh=nms_threshold,
+                              top_k=2)
 
 model.load_weights(sys.argv[1])
 
@@ -259,11 +259,11 @@ def print_stats(analisys, size):
   else:
     prec = analisys['hit'] / analisys['pred']
 
-  rec = analisys['hit'] / analisys['real']
+  rec = analisys['hit'] / analisys['real'] if analisys['real'] <> 0 else 0
   fsco = 0. if (prec + rec) == 0 else (2 * prec * rec / (prec + rec))
 
-  print('Analysis {}: Prec {:.5f}, Rec {:.5f}, F1 {:.5f}'.format(
-    size, prec, rec, fsco))
+  print('Analysis {}: Prec {:.5f}, Rec {:.5f}, F1 {:.5f}, Total {}'.format(
+    size, prec, rec, fsco, analisys['real']))
 
 print_stats(analysis_small, 'small')
 print_stats(analysis_medium, 'medium')
