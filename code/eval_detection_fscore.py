@@ -253,17 +253,17 @@ for i, img_path in enumerate(imfiles):
 
 print('Average FPS: {:.5f}'.format(total_img/total_time))
 
-def print_stats(analisys, size):
-  if analisys['pred'] == 0:
+def print_stats(analysis, size):
+  if analysis['pred'] == 0:
     prec = 0
   else:
-    prec = analisys['hit'] / analisys['pred']
+    prec = float(analysis['hit']) / analysis['pred']
 
-  rec = analisys['hit'] / analisys['real'] if analisys['real'] <> 0 else 0
-  fsco = 0. if (prec + rec) == 0 else (2 * prec * rec / (prec + rec))
+  rec = float(analysis['hit']) / analysis['real'] if analysis['real'] <> 0 else 0
+  fsco = 0. if (prec + rec) == 0 else float(2 * prec * rec) / (prec + rec)
 
   print('Analysis {}: Prec {:.5f}, Rec {:.5f}, F1 {:.5f}, Total {}'.format(
-    size, prec, rec, fsco, analisys['real']))
+    size, prec, rec, fsco, analysis['real']))
 
 print_stats(analysis_small, 'small')
 print_stats(analysis_medium, 'medium')
